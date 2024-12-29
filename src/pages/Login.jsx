@@ -190,7 +190,7 @@ const Login = () => {
   };
 
   const handleGoogleLogin = () => {
-    window.location.href = 'https://eventease-api.onrender.com/api/auth/google';
+    window.location.href = 'https://eventease-api-29dec.onrender.com/api/auth/google';
   };
 
   return (
