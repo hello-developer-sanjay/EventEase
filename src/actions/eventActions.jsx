@@ -4,7 +4,7 @@ import { GET_EVENTS, CREATE_EVENT, UPDATE_EVENT, DELETE_EVENT } from './types';
 
 export const getEvents = (token) => async (dispatch) => {
   try {
-    const res = await axios.get('https://eventease-api.onrender.com/api/events', {
+    const res = await axios.get('https://eventease-api-29dec.onrender.com/api/events', {
       headers: { 'x-auth-token': token }
     });
     dispatch({ type: GET_EVENTS, payload: res.data });
@@ -16,7 +16,7 @@ export const getEvents = (token) => async (dispatch) => {
 
 export const createEvent = (eventData, token) => async (dispatch) => {
   try {
-    const res = await axios.post('https://eventease-api.onrender.com/api/events/create', eventData, {
+    const res = await axios.post('https://eventease-api-29dec.onrender.com/api/events/create', eventData, {
       headers: { 'x-auth-token': token }
     });
     dispatch({ type: CREATE_EVENT, payload: res.data });
@@ -28,7 +28,7 @@ export const createEvent = (eventData, token) => async (dispatch) => {
 
 export const updateEvent = (id, eventData, token) => async (dispatch) => {
   try {
-    const res = await axios.put(`https://eventease-api.onrender.com/api/events/${id}`, eventData, {
+    const res = await axios.put(`https://eventease-api-29dec.onrender.com/api/events/${id}`, eventData, {
       headers: { 'x-auth-token': token }
     });
     dispatch({ type: UPDATE_EVENT, payload: res.data });
@@ -40,7 +40,7 @@ export const updateEvent = (id, eventData, token) => async (dispatch) => {
 
 export const deleteEvent = (id, token) => async (dispatch) => {
   try {
-    await axios.delete(`https://eventease-api.onrender.com/api/events/${id}`, {
+    await axios.delete(`https://eventease-api-29dec.onrender.com/api/events/${id}`, {
       headers: { 'x-auth-token': token }
     });
     dispatch({ type: DELETE_EVENT, payload: id });
