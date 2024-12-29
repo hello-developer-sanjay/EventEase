@@ -9,7 +9,7 @@ export const syncGoogleCalendar = (token) => async (dispatch) => {
     }
   
     try {
-        const res = await axios.post('https://eventease-api.onrender.com/api/google-calendar/sync', null, {
+        const res = await axios.post('https://eventease-api-29dec.onrender.com/api/google-calendar/sync', null, {
         headers: { 'x-auth-token': token }
         });
         const responseData = { ...res.data, token }; // Include token in the response data
