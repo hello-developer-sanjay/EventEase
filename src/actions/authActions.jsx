@@ -9,7 +9,7 @@ export const loadUser = () => async dispatch => {
         dispatch({ type: AUTHENTICATE_USER, payload: true });
     }
     try {
-        const res = await axios.get('https://eventease-api.onrender.com/api/auth/user');
+        const res = await axios.get('https://eventease-api-29dec.onrender.com/api/auth/user');
         const user = res.data.user;
 
         localStorage.setItem('user', JSON.stringify(user));
@@ -31,7 +31,7 @@ export const login = (email, password) => async dispatch => {
     const body = JSON.stringify({ email, password });
 
     try {
-        const res = await axios.post('https://eventease-api.onrender.com/api/auth/login', body, config);
+        const res = await axios.post('https://eventease-api-29dec.onrender.com/api/auth/login', body, config);
         const { token, user } = res.data;
         console.log('Login response:', res.data);
 
@@ -62,7 +62,7 @@ export const register = formData => async dispatch => {
     };
 
     try {
-        const res = await axios.post('https://eventease-api.onrender.com/api/auth/register', formData, config);
+        const res = await axios.post('https://eventease-api-29dec.onrender.com/api/auth/register', formData, config);
         const { token, user } = res.data;
         console.log('Register response:', res.data);
 
