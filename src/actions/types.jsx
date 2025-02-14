@@ -1,5 +1,7 @@
 export const GET_EVENTS = 'GET_EVENTS';
 export const CREATE_EVENT = 'CREATE_EVENT';
+export const CREATE_EVENT_ERROR = 'CREATE_EVENT_ERROR';
+
 export const UPDATE_EVENT = 'UPDATE_EVENT';
 export const DELETE_EVENT = 'DELETE_EVENT';
 export const SYNC_GOOGLE_CALENDAR = 'SYNC_GOOGLE_CALENDAR';
