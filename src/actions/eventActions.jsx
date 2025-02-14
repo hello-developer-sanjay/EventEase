@@ -1,6 +1,6 @@
 // src/actions/eventActions.js
 import axios from 'axios';
-import { GET_EVENTS, CREATE_EVENT, UPDATE_EVENT, DELETE_EVENT } from './types';
+import { GET_EVENTS, CREATE_EVENT, CREATE_EVENT_ERROR, UPDATE_EVENT, DELETE_EVENT } from './types';
 
 export const getEvents = (token) => async (dispatch) => {
   try {
@@ -16,13 +16,22 @@ export const getEvents = (token) => async (dispatch) => {
 
 export const createEvent = (eventData, token) => async (dispatch) => {
   try {
-    const res = await axios.post('https://eventease-api-29dec.onrender.com/api/events/create', eventData, {
-      headers: { 'x-auth-token': token }
-    });
+    const res = await axios.post(
+      'https://eventease-api-29dec.onrender.com/api/events/create',
+      eventData,
+      {
+        headers: { 'x-auth-token': token, 'Content-Type': 'application/json' }
+      }
+    );
+    
     dispatch({ type: CREATE_EVENT, payload: res.data });
   } catch (err) {
     console.error('Error creating event:', err);
-    // You might want to dispatch an error action here or handle it appropriately
+    
+    dispatch({
+      type: CREATE_EVENT_ERROR,
+      payload: err.response ? err.response.data : { message: 'Something went wrong' }
+    });
   }
 };
 
