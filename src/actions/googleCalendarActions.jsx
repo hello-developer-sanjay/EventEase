@@ -11,7 +11,7 @@ export const syncGoogleCalendar = (token) => async (dispatch) => {
 
     try {
         const res = await axios.post(
-            'https://eventease-backend-api-16feb.onrender.com/api/google-calendar/sync',
+            'https://q0lvs5rnt9.execute-api.ap-south-1.amazonaws.com/prod/api/google-calendar/sync',
             {}, // Ensure the request body is empty or correctly formatted
             {
                 headers: { 'x-auth-token': token }
