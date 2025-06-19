@@ -7,8 +7,8 @@ import apiConfig from '../../../shared/utils/apiConfig';
 const initialState = {
   token: localStorage.getItem('eventeaseToken') || null,
   user: JSON.parse(localStorage.getItem('user')) || null,
-  isAuthenticated: false,
-  loading: true,
+  isAuthenticated: !!localStorage.getItem('eventeaseToken'),
+  loading: false,
   error: null,
 };
 
@@ -31,6 +31,7 @@ export const login = createAsyncThunk('eventease/auth/login', async ({ email, pa
 
 export const loadUser = createAsyncThunk('eventease/auth/loadUser', async (_, { rejectWithValue }) => {
   const token = localStorage.getItem('eventeaseToken');
+  const user = JSON.parse(localStorage.getItem('user'));
   if (token) {
     setAuthToken(token);
   }
@@ -42,6 +43,9 @@ export const loadUser = createAsyncThunk('eventease/auth/loadUser', async (_, { 
     return res.data.user;
   } catch (error) {
     console.error('Error loading user:', error);
+    if (user && token) {
+      return user; // Fallback to localStorage user if API fails
+    }
     return rejectWithValue(error.response?.data?.message || 'Failed to load user');
   }
 });
@@ -84,8 +88,15 @@ const authSlice = createSlice({
       })
       .addCase(loadUser.rejected, (state, action) => {
         state.loading = false;
-        state.isAuthenticated = false;
         state.error = action.payload;
+        // Keep isAuthenticated true if token and user exist in localStorage
+        if (localStorage.getItem('eventeaseToken') && localStorage.getItem('user')) {
+          state.isAuthenticated = true;
+          state.user = JSON.parse(localStorage.getItem('user'));
+        } else {
+          state.isAuthenticated = false;
+          state.user = null;
+        }
       });
   },
 });
