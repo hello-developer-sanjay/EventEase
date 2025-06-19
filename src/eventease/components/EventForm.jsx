@@ -1,100 +1,85 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
+import moment from 'moment';
 
 const FormContainer = styled.div`
   position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background-color: #ffffff;
-  padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-  max-width: 400px;
-  display: ${props => (props.show ? 'block' : 'none')};
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
   z-index: 1000;
 `;
 
-const Backdrop = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
+const Form = styled.form`
+  background: white;
+  padding: 2rem;
+  border-radius: 8px;
   width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: ${props => (props.show ? 'block' : 'none')};
-  z-index: 999;
-`;
-
-const Title = styled.h3`
-  text-align: center;
-`;
-
-const FormGroup = styled.div`
-  margin-bottom: 15px;
-`;
-
-const Label = styled.label`
-  display: block;
-  margin-bottom: 5px;
+  max-width: 500px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 `;
 
 const Input = styled.input`
   width: 100%;
   padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
+  margin: 10px 0;
+  border: 1px solid #ddd;
+  border-radius: 4px;
 `;
 
 const TextArea = styled.textarea`
   width: 100%;
   padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
+  margin: 10px 0;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  resize: vertical;
 `;
 
 const Button = styled.button`
-  padding: 10px 20px;
-  background-color: #007bff;
-  color: #fff;
+  padding: 10px;
+  margin: 5px;
   border: none;
-  border-radius: 5px;
+  border-radius: 4px;
   cursor: pointer;
+  &:hover {
+    opacity: 0.9;
+  }
 `;
 
-const CloseButton = styled.button`
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 20px;
-  color: #777;
+const SubmitButton = styled(Button)`
+  background-color: #2c3e50;
+  color: white;
+`;
+
+const DeleteButton = styled(Button)`
+  background-color: #e74c3c;
+  color: white;
+`;
+
+const CancelButton = styled(Button)`
+  background-color: #95a5a6;
+  color: white;
 `;
 
 const EventForm = ({ event, onClose, onCreate, onUpdate, onDelete }) => {
   const [formData, setFormData] = useState({
-    title: event.title,
-    description: event.description,
-    participants: Array.isArray(event.participants) ? event.participants.join(', ') : '',
-    date: event.date,
-    time: event.time,
-    duration: event.duration,
-    sessionNotes: event.sessionNotes,
+    title: event.title || '',
+    description: event.description || '',
+    participants: event.participants || '',
+    date: event.date || moment(event.start).format('YYYY-MM-DD'),
+    time: event.time || moment(event.start).format('HH:mm'),
+    duration: event.duration || '',
+    sessionNotes: event.sessionNotes || '',
+    start: event.start,
+    end: event.end,
+    userId: event.userId,
   });
-
-  useEffect(() => {
-    setFormData({
-      title: event.title,
-      description: event.description,
-      participants: Array.isArray(event.participants) ? event.participants.join(', ') : '',
-      date: event.date,
-      time: event.time,
-      duration: event.duration,
-      sessionNotes: event.sessionNotes,
-    });
-  }, [event]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -102,96 +87,88 @@ const EventForm = ({ event, onClose, onCreate, onUpdate, onDelete }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const updatedEvent = {
-      ...formData,
-      participants: formData.participants.split(',').map(p => p.trim()),
+    const start = new Date(`${formData.date}T${formData.time}`);
+    const end = formData.duration
+      ? new Date(start.getTime() + parseInt(formData.duration) * 60 * 1000)
+      : new Date(start.getTime() + 60 * 60 * 1000); // Default 1 hour
+
+    const eventData = {
+      title: formData.title,
+      description: formData.description,
+      participants: formData.participants,
+      start,
+      end,
+      userId: formData.userId,
+      sessionNotes: formData.sessionNotes,
     };
+
     if (event._id) {
-      onUpdate(updatedEvent);
+      onUpdate(eventData);
     } else {
-      onCreate(updatedEvent);
+      onCreate(eventData);
     }
   };
 
   return (
-    <>
-      <Backdrop show={true} onClick={onClose} />
-      <FormContainer show={true}>
-        <Title>{event._id ? 'Update Event' : 'Create Event'}</Title>
-        <CloseButton onClick={onClose}>×</CloseButton>
-        <form onSubmit={handleSubmit}>
-          <FormGroup>
-            <Label>Title</Label>
-            <Input
-              type="text"
-              name="title"
-              value={formData.title}
-              onChange={handleChange}
-            />
-          </FormGroup>
-          <FormGroup>
-            <Label>Description</Label>
-            <Input
-              type="text"
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-            />
-          </FormGroup>
-          <FormGroup>
-            <Label>Participants</Label>
-            <Input
-              type="text"
-              name="participants"
-              value={formData.participants}
-              onChange={handleChange}
-            />
-          </FormGroup>
-          <FormGroup>
-            <Label>Date</Label>
-            <Input
-              type="date"
-              name="date"
-              value={formData.date}
-              onChange={handleChange}
-            />
-          </FormGroup>
-          <FormGroup>
-            <Label>Time</Label>
-            <Input
-              type="time"
-              name="time"
-              value={formData.time}
-              onChange={handleChange}
-            />
-          </FormGroup>
-          <FormGroup>
-            <Label>Duration (in minutes)</Label>
-            <Input
-              type="number"
-              name="duration"
-              value={formData.duration}
-              onChange={handleChange}
-            />
-          </FormGroup>
-          <FormGroup>
-            <Label>Session Notes</Label>
-            <TextArea
-              name="sessionNotes"
-              value={formData.sessionNotes}
-              onChange={handleChange}
-            />
-          </FormGroup>
-          <div>
-            <Button type="submit">{event._id ? 'Update' : 'Create'}</Button>
-            <Button type="button" onClick={onClose}>Cancel</Button>
-            {event._id && (
-              <Button type="button" onClick={onDelete}>Delete</Button>
-            )}
-          </div>
-        </form>
-      </FormContainer>
-    </>
+    <FormContainer>
+      <Form onSubmit={handleSubmit}>
+        <h2>{event._id ? 'Edit Event' : 'Create Event'}</h2>
+        <Input
+          type="text"
+          name="title"
+          value={formData.title}
+          onChange={handleChange}
+          placeholder="Event Title"
+          required
+        />
+        <TextArea
+          name="description"
+          value={formData.description}
+          onChange={handleChange}
+          placeholder="Description"
+          rows="4"
+        />
+        <Input
+          type="text"
+          name="participants"
+          value={formData.participants}
+          onChange={handleChange}
+          placeholder="Participants (emails)"
+        />
+        <Input
+          type="date"
+          name="date"
+          value={formData.date}
+          onChange={handleChange}
+          required
+        />
+        <Input
+          type="time"
+          name="time"
+          value={formData.time}
+          onChange={handleChange}
+          required
+        />
+        <Input
+          type="number"
+          name="duration"
+          value={formData.duration}
+          onChange={handleChange}
+          placeholder="Duration (minutes)"
+          min="1"
+        />
+        <TextArea
+          name="sessionNotes"
+          value={formData.sessionNotes}
+          onChange={handleChange}
+          placeholder="Session Notes"
+          rows="4"
+        />
+        <SubmitButton type="submit">{event._id ? 'Update' : 'Create'}</SubmitButton>
+        {event._id && <DeleteButton type="button" onClick={onDelete}>Delete</DeleteButton>}
+        <CancelButton type="button" onClick={onClose}>Cancel</CancelButton>
+      </Form>
+    </FormContainer>
   );
 };
 
