@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
+import { toast } from 'react-toastify';
 import apiConfig from '../../../shared/utils/apiConfig';
 
 const initialState = {
@@ -10,37 +11,48 @@ const initialState = {
 
 export const getEvents = createAsyncThunk('eventease/events/getEvents', async (_, { getState, rejectWithValue }) => {
   try {
-    const { token } = getState().eventease.auth;
+    const { token, user } = getState().eventease.auth;
     const res = await axios.get(`${apiConfig.eventease}/events`, {
       headers: { 'x-auth-token': token },
+      params: { userId: user?._id },
     });
     return res.data;
   } catch (error) {
-    return rejectWithValue(error.response?.data?.message || 'Failed to fetch events');
+    const message = error.response?.data?.message || 'Failed to fetch events';
+    toast.error(message);
+    return rejectWithValue(message);
   }
 });
 
 export const createEvent = createAsyncThunk('eventease/events/createEvent', async (eventData, { getState, rejectWithValue }) => {
   try {
-    const { token } = getState().eventease.auth;
-    const res = await axios.post(`${apiConfig.eventease}/events`, eventData, {
+    const { token, user } = getState().eventease.auth;
+    const data = { ...eventData, userId: user?._id };
+    const res = await axios.post(`${apiConfig.eventease}/events`, data, {
       headers: { 'x-auth-token': token, 'Content-Type': 'application/json' },
     });
+    toast.success('Event created successfully');
     return res.data;
   } catch (error) {
-    return rejectWithValue(error.response?.data?.message || 'Failed to create event');
+    const message = error.response?.data?.message || 'Failed to create event';
+    toast.error(message);
+    return rejectWithValue(message);
   }
 });
 
 export const updateEvent = createAsyncThunk('eventease/events/updateEvent', async ({ id, eventData }, { getState, rejectWithValue }) => {
   try {
-    const { token } = getState().eventease.auth;
-    const res = await axios.put(`${apiConfig.eventease}/events/${id}`, eventData, {
+    const { token, user } = getState().eventease.auth;
+    const data = { ...eventData, userId: user?._id };
+    const res = await axios.put(`${apiConfig.eventease}/events/${id}`, data, {
       headers: { 'x-auth-token': token, 'Content-Type': 'application/json' },
     });
+    toast.success('Event updated successfully');
     return res.data;
   } catch (error) {
-    return rejectWithValue(error.response?.data?.message || 'Failed to update event');
+    const message = error.response?.data?.message || 'Failed to update event';
+    toast.error(message);
+    return rejectWithValue(message);
   }
 });
 
@@ -50,9 +62,12 @@ export const deleteEvent = createAsyncThunk('eventease/events/deleteEvent', asyn
     await axios.delete(`${apiConfig.eventease}/events/${id}`, {
       headers: { 'x-auth-token': token },
     });
+    toast.success('Event deleted successfully');
     return id;
   } catch (error) {
-    return rejectWithValue(error.response?.data?.message || 'Failed to delete event');
+    const message = error.response?.data?.message || 'Failed to delete event';
+    toast.error(message);
+    return rejectWithValue(message);
   }
 });
 
