@@ -9,6 +9,7 @@ import useAuth from '../hooks/useAuth';
 import EventForm from './EventForm';
 import GoogleCalendarSync from './GoogleCalendarSync';
 import LoginPrompt from './LoginPrompt';
+import { toast } from 'react-toastify';
 
 const Container = styled.div`
   max-width: 800px;
@@ -41,51 +42,84 @@ const Calendar = () => {
   const [showEventForm, setShowEventForm] = useState(false);
 
   useEffect(() => {
-    if (isAuthenticated && token) {
+    if (isAuthenticated && token && user?._id) {
       dispatch(getEvents());
     }
-  }, [dispatch, isAuthenticated, token]);
+  }, [dispatch, isAuthenticated, token, user?._id]);
 
-  const handleSelectSlot = (slotInfo) => {
+  const handleSelectSlot = ({ start, end }) => {
     setSelectedEvent({
-      start: slotInfo.start,
-      end: slotInfo.end,
+      start,
+      end,
       title: '',
       description: '',
-      participants: '',
-      date: '',
-      time: '',
+      participants: user?.email || '',
+      date: moment(start).format('YYYY-MM-DD'),
+      time: moment(start).format('HH:mm'),
       duration: '',
       sessionNotes: '',
+      userId: user?._id,
     });
     setShowEventForm(true);
   };
 
   const handleSelectEvent = (event) => {
-    setSelectedEvent(event);
+    setSelectedEvent({
+      ...event,
+      date: moment(event.start).format('YYYY-MM-DD'),
+      time: moment(event.start).format('HH:mm'),
+      userId: user?._id,
+    });
     setShowEventForm(true);
   };
 
-  const handleCreateEvent = (eventData) => {
-    dispatch(createEvent(eventData));
-    setShowEventForm(false);
+  const handleCreateEvent = async (eventData) => {
+    try {
+      const action = await dispatch(createEvent(eventData));
+      if (createEvent.fulfilled.match(action)) {
+        toast.success('Event created successfully');
+        setShowEventForm(false);
+      } else {
+        toast.error(action.payload || 'Failed to create event');
+      }
+    } catch (error) {
+      toast.error(error.message || 'Failed to create event');
+    }
   };
 
-  const handleUpdateEvent = (eventData) => {
-    dispatch(updateEvent({ id: selectedEvent._id, eventData }));
-    setShowEventForm(false);
+  const handleUpdateEvent = async (eventData) => {
+    try {
+      const action = await dispatch(updateEvent({ id: selectedEvent._id, eventData }));
+      if (updateEvent.fulfilled.match(action)) {
+        toast.success('Event updated successfully');
+        setShowEventForm(false);
+      } else {
+        toast.error(action.payload || 'Failed to update event');
+      }
+    } catch (error) {
+      toast.error(error.message || 'Failed to update event');
+    }
   };
 
-  const handleDeleteEvent = () => {
-    dispatch(deleteEvent(selectedEvent._id));
-    setShowEventForm(false);
+  const handleDeleteEvent = async () => {
+    try {
+      const action = await dispatch(deleteEvent(selectedEvent._id));
+      if (deleteEvent.fulfilled.match(action)) {
+        toast.success('Event deleted successfully');
+        setShowEventForm(false);
+      } else {
+        toast.error(action.payload || 'Failed to delete event');
+      }
+    } catch (error) {
+      toast.error(error.message || 'Failed to delete event');
+    }
   };
 
   if (loading) {
     return <LoginPrompt />;
   }
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated || !user?._id) {
     return <LoginPrompt />;
   }
 
@@ -94,11 +128,15 @@ const Calendar = () => {
   }
 
   const formatEvents = (events) => {
-    return events.map(event => ({
-      ...event,
-      start: new Date(event.date || event.start),
-      end: new Date(event.date || event.end),
-    }));
+    return events.map(event => {
+      const start = event.start || event.date;
+      const end = event.end || event.date;
+      return {
+        ...event,
+        start: start ? new Date(start) : new Date(),
+        end: end ? new Date(end) : new Date(),
+      };
+    }).filter(event => event.start && event.end && !isNaN(event.start.getTime()) && !isNaN(event.end.getTime()));
   };
 
   const mergedEvents = formatEvents([...events, ...googleCalendarEvents]);
