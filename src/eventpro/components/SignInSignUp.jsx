@@ -1,118 +1,236 @@
-import React, { useState } from 'react';
-import styled from 'styled-components';
+import  { useState, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { login } from '../../store/slices/eventpro/authSlice';
-import { toast } from 'react-toastify';
+import styled, { keyframes } from 'styled-components';
+import { Link } from 'react-router-dom';
+import { RingLoader } from 'react-spinners';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import { faGoogle } from '@fortawesome/free-brands-svg-icons';
 
 const Container = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
-  background-color: #f0f2f5;
+  min-height: 50vh;
+  padding: 2rem;
 `;
 
-const Form = styled.form`
-  background: white;
+const LoginForm = styled.form`
+  background: linear-gradient(135deg, #3a3a3a, #1e1e1e);
   padding: 2rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  width: 100%;
+  border-radius: 20px;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
   max-width: 400px;
+  width: 100%;
+  transform: perspective(1000px) rotateY(10deg);
+  transition: transform 0.5s ease, box-shadow 0.5s ease;
+  &:hover {
+    transform: perspective(1000px) rotateY(0);
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+  }
+`;
+
+const fadeIn = keyframes`
+  0% {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
 `;
 
 const Title = styled.h2`
-  margin-bottom: 1rem;
+  font-family: 'Cinzel Decorative', cursive;
+  color: #d4af37;
   text-align: center;
-  color: #333;
+  margin-bottom: 2rem;
+  animation: ${fadeIn} 1s ease-in-out;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
 `;
 
 const Input = styled.input`
+  padding: 0.5rem;
+  margin-bottom: 1rem;
+  border: 2px solid #d4af37;
+  border-radius: 10px;
+  font-size: 1rem;
   width: 100%;
-  padding: 10px;
-  margin: 10px 0;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  background-color: #2a2a2a;
+  color: #fff;
+  transition: border-color 0.3s, box-shadow 0.3s;
+  &:focus {
+    border-color: #d4af37;
+    outline: none;
+    box-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
+  }
 `;
 
 const Button = styled.button`
-  width: 100%;
-  padding: 10px;
-  background-color: #2c3e50;
-  color: white;
+  padding: 0.5rem 1rem;
+  background-color: #d4af37;
+  color: black;
   border: none;
-  border-radius: 4px;
+  border-radius: 10px;
+  font-size: 0.9rem;
   cursor: pointer;
+  margin-top: 1rem;
+  transition: background-color 0.3s, transform 0.3s, box-shadow 0.3s;
   &:hover {
-    background-color: #34495e;
+    background-color: #e5c370;
+    transform: scale(1.05);
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
   }
 `;
 
-const Link = styled.a`
-  display: block;
-  text-align: center;
+const GoogleButton = styled(Button)`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #db4437;
+  color: white;
+  margin-top: 1rem;
+  &:hover {
+    background-color: #c23321;
+  }
+`;
+
+const GoogleIcon = styled(FontAwesomeIcon)`
+  margin-right: 0.5rem;
+`;
+
+const PasswordContainer = styled.div`
+  position: relative;
+`;
+
+const ToggleIcon = styled(FontAwesomeIcon)`
+  position: absolute;
+  right: 10px;
+  top: 35%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: #d4af37;
+`;
+
+const ForgotPasswordLink = styled(Link)`
+  display: inline-block;
   margin-top: 10px;
-  color: #2c3e50;
+  font-size: 16px;
+  color: #d4af37;
   text-decoration: none;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  transition: text-shadow 0.5s ease;
   &:hover {
-    text-decoration: underline;
+    text-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
   }
 `;
 
-const ErrorMessage = styled.p`
-  color: red;
-  text-align: center;
-`;
-
-const SignInSignUp = () => {
-  const [formData, setFormData] = useState({ email: '', password: '' });
-  const [error, setError] = useState('');
+const Login = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const [formData, setFormData] = useState({
+    email: '',
+    password: ''
+  });
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const { email, password } = formData;
 
-  const onChange = e => setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleChange = e => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
 
-  const onSubmit = async e => {
-    e.preventDefault();
-    try {
-      await dispatch(login({ email, password })).unwrap();
-      navigate('/eventpro/dashboard');
-    } catch (err) {
-      setError(err.message || 'Login failed');
-      toast.error(err.message || 'Login failed');
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const user = params.get('user');
+    if (user) {
+      const userData = JSON.parse(decodeURIComponent(user));
+      dispatch(loginSuccess(userData));
+      navigate('/dashboard');
     }
+  }, [dispatch, navigate]);
+
+  const handleSubmit = async e => {
+    e.preventDefault();
+    setLoading(true);
+    const response = await dispatch(login(email, password));
+    setLoading(false);
+    if (response.success) {
+      toast.success('Login successful');
+      if (response.role === 'admin') {
+        navigate('/admin-dashboard');
+      } else {
+        navigate('/dashboard');
+      }
+    } else {
+      toast.error(response.message || 'Invalid email or password');
+    }
+  };
+
+  const handleGoogleLogin = () => {
+    window.location.href = 'https://eventmanager-api-19july.onrender.com/api/auth/google';
+
   };
 
   return (
     <Container>
-      <Form onSubmit={onSubmit}>
-        <Title>EventPro Login</Title>
-        {error && <ErrorMessage>{error}</ErrorMessage>}
+      <LoginForm onSubmit={handleSubmit}>
+        <Title aria-label="EventPro Title">EventPro</Title>
         <Input
           type="email"
+          placeholder="Email"
           name="email"
           value={email}
-          onChange={onChange}
-          placeholder="Email"
+          onChange={handleChange}
           required
+          aria-label="Email"
         />
-        <Input
-          type="password"
-          name="password"
-          value={password}
-          onChange={onChange}
-          placeholder="Password"
-          required
-        />
-        <Button type="submit">Login</Button>
-        <Link href="/eventpro/register">Don't have an account? Register</Link>
-        <Link href="/eventpro/forgot-password">Forgot Password?</Link>
-      </Form>
+        <PasswordContainer>
+          <Input
+            type={showPassword ? 'text' : 'password'}
+            placeholder="Password"
+            name="password"
+            value={password}
+            onChange={handleChange}
+            required
+            aria-label="Password"
+          />
+          <ToggleIcon
+            icon={showPassword ? faEyeSlash : faEye}
+            onClick={togglePasswordVisibility}
+            aria-label={showPassword ? "Hide password" : "Show password"}
+          />
+        </PasswordContainer>
+        <Button type="submit" aria-label="Login Button">
+          {loading ? (
+            <RingLoader color={'#000000'} loading={loading} size={20} />
+          ) : (
+            'Login'
+          )}
+        </Button>
+        <GoogleButton onClick={handleGoogleLogin} aria-label="Login with Google">
+          <GoogleIcon icon={faGoogle} />
+          Login with Google
+        </GoogleButton>
+        <ForgotPasswordLink to="/forgot-password" aria-label="Forgot Password Link">
+          Forgot Password? Click to reset
+        </ForgotPasswordLink>
+      </LoginForm>
+      <ToastContainer />
     </Container>
   );
 };
 
-export default SignInSignUp;
+export default Login;
