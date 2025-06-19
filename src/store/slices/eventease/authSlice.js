@@ -44,8 +44,10 @@ export const loadUser = createAsyncThunk('eventease/auth/loadUser', async (_, { 
   } catch (error) {
     console.error('Error loading user:', error);
     if (user && token) {
-      return user; // Fallback to localStorage user if API fails
+      return user; // Fallback to localStorage user
     }
+    localStorage.removeItem('eventeaseToken');
+    localStorage.removeItem('user');
     return rejectWithValue(error.response?.data?.message || 'Failed to load user');
   }
 });
@@ -89,13 +91,13 @@ const authSlice = createSlice({
       .addCase(loadUser.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
-        // Keep isAuthenticated true if token and user exist in localStorage
         if (localStorage.getItem('eventeaseToken') && localStorage.getItem('user')) {
           state.isAuthenticated = true;
           state.user = JSON.parse(localStorage.getItem('user'));
         } else {
           state.isAuthenticated = false;
           state.user = null;
+          state.token = null;
         }
       });
   },
