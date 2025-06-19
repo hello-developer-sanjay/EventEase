@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
+import { toast } from 'react-toastify';
 import apiConfig from '../../../shared/utils/apiConfig';
 
 const initialState = {
@@ -13,15 +14,19 @@ const initialState = {
 
 export const syncGoogleCalendar = createAsyncThunk('eventease/googleCalendar/sync', async (_, { getState, rejectWithValue }) => {
   try {
-    const { token } = getState().eventease.auth;
+    const { token, user } = getState().eventease.auth;
+    const googleAccessToken = user?.googleAccessToken || localStorage.getItem('googleAccessToken');
     const res = await axios.post(
       `${apiConfig.eventease}/google-calendar/sync`,
-      {},
-      { headers: { 'x-auth-token': token } }
+      { googleAccessToken },
+      { headers: { 'x-auth-token': token, 'Content-Type': 'application/json' } }
     );
+    toast.success('Google Calendar synced successfully');
     return res.data;
   } catch (error) {
-    return rejectWithValue(error.response?.data?.message || 'Failed to sync Google Calendar');
+    const message = error.response?.data?.message || 'Failed to sync Google Calendar';
+    toast.error(message);
+    return rejectWithValue(message);
   }
 });
 
@@ -36,7 +41,7 @@ const googleCalendarSlice = createSlice({
         state.error = null;
       })
       .addCase(syncGoogleCalendar.fulfilled, (state, action) => {
-        state.events = action.payload.events;
+        state.events = action.payload.events || [];
         state.syncStatus = action.payload.status;
         state.accessToken = action.payload.accessToken;
         state.refreshToken = action.payload.refreshToken;
