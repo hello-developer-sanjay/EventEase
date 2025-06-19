@@ -1,10 +1,11 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
+import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
 import { loadUser as loadEventEaseUser } from './store/slices/eventease/authSlice';
 import { loadUser as loadEventProUser } from './store/slices/eventpro/authSlice';
 import Layout from './shared/components/Layout';
 import ErrorBoundary from './shared/components/ErrorBoundary';
+import { toast } from 'react-toastify';
 
 // EventEase Pages and Components
 import Calendar from './eventease/components/Calendar';
@@ -23,7 +24,9 @@ import Dashboard from './eventpro/pages/Dashboard';
 
 const App = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const location = useLocation();
+  const isAuthenticated = useSelector(state => state.eventease?.auth?.isAuthenticated);
 
   useEffect(() => {
     // Parse query parameters
@@ -36,20 +39,24 @@ const App = () => {
         const parsedUser = JSON.parse(decodeURIComponent(user));
         localStorage.setItem('eventeaseToken', token);
         localStorage.setItem('user', JSON.stringify(parsedUser));
-        dispatch(loadEventEaseUser());
+        dispatch(loadEventEaseUser()).then((action) => {
+          if (loadEventEaseUser.fulfilled.match(action)) {
+            navigate(parsedUser.role === 'admin' ? '/admin-dashboard' : '/eventease');
+          } else {
+            toast.error('Failed to authenticate user');
+            navigate('/eventease/login');
+          }
+        });
       } catch (error) {
         console.error('Error parsing user from query:', error);
+        toast.error('Invalid user data');
+        navigate('/eventease/login');
       }
-    }
-
-    // Load users for both apps
-    try {
+    } else {
       dispatch(loadEventEaseUser()).catch(error => console.error('EventEase loadUser failed:', error));
-      dispatch(loadEventProUser()).catch(error => console.error('EventPro loadUser failed:', error));
-    } catch (error) {
-      console.error('Error dispatching loadUser actions:', error);
     }
-  }, [dispatch, location.search]);
+    dispatch(loadEventProUser()).catch(error => console.error('EventPro loadUser failed:', error));
+  }, [dispatch, location.search, navigate]);
 
   return (
     <ErrorBoundary>
@@ -57,7 +64,10 @@ const App = () => {
         <Routes>
           {/* EventEase Routes */}
           <Route path="/eventease" element={<Calendar />} />
-          <Route path="/eventease/create-event" element={<EventForm />} />
+          <Route
+            path="/eventease/create-event"
+            element={isAuthenticated ? <EventForm /> : <Login />}
+          />
           <Route path="/eventease/login" element={<Login />} />
           <Route path="/eventease/sync-google-calendar" element={<GoogleCalendarSync />} />
 
