@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import moment from 'moment';
+import { useSelector } from 'react-redux';
 
 const FormContainer = styled.div`
   position: fixed;
@@ -67,18 +68,22 @@ const CancelButton = styled(Button)`
   color: white;
 `;
 
-const EventForm = ({ event, onClose, onCreate, onUpdate, onDelete }) => {
+const EventForm = ({ event = {}, onClose, onCreate, onUpdate, onDelete }) => {
+  const user = useSelector(state => state.eventease?.auth?.user || {});
+  const defaultStart = new Date();
+  const defaultEnd = new Date(defaultStart.getTime() + 60 * 60 * 1000); // 1 hour later
+
   const [formData, setFormData] = useState({
     title: event.title || '',
     description: event.description || '',
-    participants: event.participants || '',
-    date: event.date || moment(event.start).format('YYYY-MM-DD'),
-    time: event.time || moment(event.start).format('HH:mm'),
+    participants: event.participants || user.email || '',
+    date: event.date || moment(defaultStart).format('YYYY-MM-DD'),
+    time: event.time || moment(defaultStart).format('HH:mm'),
     duration: event.duration || '',
     sessionNotes: event.sessionNotes || '',
-    start: event.start,
-    end: event.end,
-    userId: event.userId,
+    start: event.start || defaultStart,
+    end: event.end || defaultEnd,
+    userId: event.userId || user._id || '',
   });
 
   const handleChange = (e) => {
