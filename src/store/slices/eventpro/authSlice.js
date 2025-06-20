@@ -83,6 +83,9 @@ export const loadUser = createAsyncThunk('eventpro/auth/loadUser', async (_, { r
     return res.data.user;
   } catch (error) {
     console.error('authSlice.js - loadUser error:', error.message);
+    localStorage.removeItem('eventproToken');
+    localStorage.removeItem('eventproUser');
+    setAuthToken(null);
     return rejectWithValue(error.response?.data?.message || 'Failed to load user');
   }
 });
@@ -102,6 +105,7 @@ const authSlice = createSlice({
       state.error = null;
       localStorage.setItem('eventproToken', action.payload.token);
       localStorage.setItem('eventproUser', JSON.stringify(action.payload.user));
+      setAuthToken(action.payload.token);
       console.log('authSlice.js - setAuth:', { user: action.payload.user._id, email: action.payload.user.email });
     },
     logout(state) {
