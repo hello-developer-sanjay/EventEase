@@ -1,22 +1,22 @@
-import  { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { login } from '../../store/slices/eventpro/authSlice';
 import styled, { keyframes } from 'styled-components';
-import { Link } from 'react-router-dom';
 import { RingLoader } from 'react-spinners';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
+import { faEye, faEyeSlash, faGoogle } from '@fortawesome/free-solid-svg-icons';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { faGoogle } from '@fortawesome/free-brands-svg-icons';
 
 const Container = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 50vh;
+  min-height: 100vh;
   padding: 2rem;
+  background: url('https://sanjaybasket.s3.ap-south-1.amazonaws.com/background.webp') no-repeat center center fixed;
+  background-size: cover;
 `;
 
 const LoginForm = styled.form`
@@ -35,14 +35,8 @@ const LoginForm = styled.form`
 `;
 
 const fadeIn = keyframes`
-  0% {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  0% { opacity: 0; transform: translateY(-20px); }
+  100% { opacity: 1; transform: translateY(0); }
 `;
 
 const Title = styled.h2`
@@ -94,7 +88,6 @@ const GoogleButton = styled(Button)`
   justify-content: center;
   background-color: #db4437;
   color: white;
-  margin-top: 1rem;
   &:hover {
     background-color: #c23321;
   }
@@ -117,34 +110,17 @@ const ToggleIcon = styled(FontAwesomeIcon)`
   color: #d4af37;
 `;
 
-const ForgotPasswordLink = styled(Link)`
-  display: inline-block;
-  margin-top: 10px;
-  font-size: 16px;
-  color: #d4af37;
-  text-decoration: none;
-  position: relative;
-  overflow: hidden;
-  cursor: pointer;
-  transition: text-shadow 0.5s ease;
-  &:hover {
-    text-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
-  }
-`;
-
-const Login = () => {
+const SignInSignUp = ({ platform }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    email: '',
-    password: ''
-  });
+  const location = useLocation();
+  const [formData, setFormData] = useState({ email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const { email, password } = formData;
 
-  const handleChange = e => {
+  const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
@@ -153,41 +129,41 @@ const Login = () => {
   };
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
+    const params = new URLSearchParams(location.search);
     const user = params.get('user');
     if (user) {
       const userData = JSON.parse(decodeURIComponent(user));
-      dispatch(loginSuccess(userData));
-      navigate('/dashboard');
+      dispatch(setAuth({ token: userData.token, user: { ...userData, platform } }));
+      navigate(`/${platform}/dashboard`);
     }
-  }, [dispatch, navigate]);
+  }, [dispatch, navigate, platform, location.search]);
 
-  const handleSubmit = async e => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    const response = await dispatch(login(email, password));
-    setLoading(false);
-    if (response.success) {
+    try {
+      const response = await dispatch(login({ email, password, platform })).unwrap();
+      setLoading(false);
       toast.success('Login successful');
-      if (response.role === 'admin') {
-        navigate('/admin-dashboard');
+      if (response.user.role === 'admin') {
+        navigate(`/${platform}/admin-dashboard`);
       } else {
-        navigate('/dashboard');
+        navigate(`/${platform}/dashboard`);
       }
-    } else {
-      toast.error(response.message || 'Invalid email or password');
+    } catch (error) {
+      setLoading(false);
+      toast.error(error || 'Invalid email or password');
     }
   };
 
   const handleGoogleLogin = () => {
-    window.location.href = 'https://eventmanager-api-19july.onrender.com/api/auth/google';
-
+    window.location.href = `https://event-ease-unified-event-manager.onrender.com/api/auth/google?platform=${platform}`;
   };
 
   return (
     <Container>
       <LoginForm onSubmit={handleSubmit}>
-        <Title aria-label="EventPro Title">EventPro</Title>
+        <Title aria-label={`${platform} Title`}>{platform === 'eventpro' ? 'EventPro' : 'EventEase'}</Title>
         <Input
           type="email"
           placeholder="Email"
@@ -210,27 +186,24 @@ const Login = () => {
           <ToggleIcon
             icon={showPassword ? faEyeSlash : faEye}
             onClick={togglePasswordVisibility}
-            aria-label={showPassword ? "Hide password" : "Show password"}
+            aria-label={showPassword ? 'Hide password' : 'Show password'}
           />
         </PasswordContainer>
         <Button type="submit" aria-label="Login Button">
-          {loading ? (
-            <RingLoader color={'#000000'} loading={loading} size={20} />
-          ) : (
-            'Login'
-          )}
+          {loading ? <RingLoader color="#000000" loading={loading} size={20} /> : 'Login'}
         </Button>
         <GoogleButton onClick={handleGoogleLogin} aria-label="Login with Google">
           <GoogleIcon icon={faGoogle} />
           Login with Google
         </GoogleButton>
-        <ForgotPasswordLink to="/forgot-password" aria-label="Forgot Password Link">
-          Forgot Password? Click to reset
-        </ForgotPasswordLink>
       </LoginForm>
       <ToastContainer />
     </Container>
   );
 };
 
-export default Login;
+SignInSignUp.propTypes = {
+  platform: PropTypes.string.isRequired,
+};
+
+export default SignInSignUp;
