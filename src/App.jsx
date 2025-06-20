@@ -1,8 +1,8 @@
 import React, { useEffect, useCallback } from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate ,Navigate} from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { setAuth as setEventEaseAuth } from './store/slices/eventease/authSlice';
-import { setAuth as setEventProAuth, loadUser as loadEventProUser, logout } from './store/slices/eventpro/authSlice';
+import { setAuth as setEventProAuth, loadUser, logout } from './store/slices/eventpro/authSlice';
 import Layout from './shared/components/Layout';
 import ErrorBoundary from './shared/components/ErrorBoundary';
 import { toast } from 'react-toastify';
@@ -52,7 +52,7 @@ const App = () => {
           localStorage.setItem('eventproToken', token);
           localStorage.setItem('eventproUser', JSON.stringify(parsedUser));
           dispatch(setEventProAuth({ user: parsedUser, token }));
-          dispatch(loadEventProUser()).then(() => {
+          dispatch(loadUser()).then(() => {
             navigate(parsedUser.role === 'admin' ? '/eventpro/admin-dashboard' : '/eventpro/dashboard', { replace: true });
           }).catch((error) => {
             console.error('loadUser failed:', error);
@@ -99,7 +99,7 @@ const App = () => {
           const token = localStorage.getItem('eventproToken');
           if (user._id && user.email && token) {
             dispatch(setEventProAuth({ user, token }));
-            dispatch(loadEventProUser()).then(() => {
+            dispatch(loadUser()).then(() => {
               navigate(user.role === 'admin' ? '/eventpro/admin-dashboard' : '/eventpro/dashboard', { replace: true });
             }).catch((error) => {
               console.error('loadUser failed:', error);
@@ -121,7 +121,7 @@ const App = () => {
         navigate('/event-form', { replace: true });
       }
     }
-  }, [dispatch, location.pathname, location.search, navigate, easeAuthenticated, proAuthenticated, proUser]);
+  }, [dispatch, location.pathname, navigate, easeAuthenticated, proAuthenticated, proUser]);
 
   useEffect(() => {
     handleAuth();
