@@ -1,11 +1,14 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
-import { setAuth } from './store/slices/eventease/authSlice';
-import { loadUser as loadEventProUser } from './store/slices/eventpro/authSlice';
+import { setAuth as setEventEaseAuth } from './store/slices/eventease/authSlice';
+import { setAuth as setEventProAuth, loadUser as loadEventProUser } from './store/slices/eventpro/authSlice';
 import Layout from './shared/components/Layout';
 import ErrorBoundary from './shared/components/ErrorBoundary';
 import { toast } from 'react-toastify';
+
+// Home Page
+import Home from './Home';
 
 // EventEase Pages and Components
 import Calendar from './eventease/components/Calendar';
@@ -27,13 +30,14 @@ const App = () => {
   const location = useLocation();
 
   useEffect(() => {
-    // Parse query parameters
     const searchParams = new URLSearchParams(location.search);
     const user = searchParams.get('user');
     const token = searchParams.get('token');
+    const platform = searchParams.get('platform') || 'eventease'; // Default to eventease
 
-    console.log('Raw user query:', user); // Debug raw user data
+    console.log('Raw user query:', user);
     console.log('Raw token query:', token);
+    console.log('Platform:', platform);
 
     if (user && token) {
       try {
@@ -41,37 +45,52 @@ const App = () => {
         if (!parsedUser._id || !parsedUser.email) {
           throw new Error('Invalid user data structure');
         }
-        dispatch(setAuth({ user: parsedUser, token }));
-        navigate(parsedUser.role === 'admin' ? '/admin-dashboard' : '/eventease');
+        if (platform === 'eventpro') {
+          dispatch(setEventProAuth({ user: parsedUser, token }));
+          navigate(parsedUser.role === 'admin' ? '/eventpro/dashboard' : '/eventpro');
+        } else {
+          dispatch(setEventEaseAuth({ user: parsedUser, token }));
+          navigate(parsedUser.role === 'admin' ? '/admin-dashboard' : '/eventease');
+        }
       } catch (error) {
         console.error('Error parsing user from query:', error, 'Raw user:', user);
         toast.error('Invalid user data format');
-        navigate('/eventease/login');
+        navigate(`/${platform}/login`);
       }
-    } else if (localStorage.getItem('eventeaseToken') && localStorage.getItem('user')) {
+    } else if (localStorage.getItem(`${platform}Token`) && localStorage.getItem('user')) {
       try {
         const user = JSON.parse(localStorage.getItem('user') || '{}');
         if (user._id && user.email) {
-          dispatch(setAuth({ user, token: localStorage.getItem('eventeaseToken') }));
-          navigate(user.role === 'admin' ? '/admin-dashboard' : '/eventease');
+          if (platform === 'eventpro') {
+            dispatch(setEventProAuth({ user, token: localStorage.getItem('eventproToken') }));
+            navigate(user.role === 'admin' ? '/eventpro/dashboard' : '/eventpro');
+          } else {
+            dispatch(setEventEaseAuth({ user, token: localStorage.getItem('eventeaseToken') }));
+            navigate(user.role === 'admin' ? '/admin-dashboard' : '/eventease');
+          }
         } else {
           throw new Error('Invalid localStorage user data');
         }
       } catch (error) {
         console.error('Error parsing localStorage user:', error);
         toast.error('Invalid stored user data');
-        navigate('/eventease/login');
+        navigate(`/${platform}/login`);
       }
     } else {
-      navigate('/eventease/login');
+      navigate('/');
     }
-    dispatch(loadEventProUser()).catch(error => console.error('EventPro loadUser failed:', error));
+    if (platform === 'eventpro') {
+      dispatch(loadEventProUser()).catch(error => console.error('EventPro loadUser failed:', error));
+    }
   }, [dispatch, location.search, navigate]);
 
   return (
     <ErrorBoundary>
       <Layout>
         <Routes>
+          {/* Home Route */}
+          <Route path="/" element={<Home />} />
+
           {/* EventEase Routes */}
           <Route path="/eventease" element={<Calendar />} />
           <Route path="/eventease/login" element={<Login />} />
@@ -88,9 +107,6 @@ const App = () => {
           <Route path="/eventpro/dashboard" element={<Dashboard />} />
           <Route path="/eventpro/login" element={<SignInSignUp />} />
           <Route path="/eventpro/list-events" element={<ListEventsPage />} />
-
-          {/* Default Route */}
-          <Route path="/" element={<Calendar />} />
         </Routes>
       </Layout>
     </ErrorBoundary>
