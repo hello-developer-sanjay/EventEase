@@ -2,6 +2,7 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import apiConfig from '../../../shared/utils/apiConfig';
+import { logout } from './authSlice';
 
 const initialState = {
   events: [],
@@ -9,9 +10,11 @@ const initialState = {
   error: null,
 };
 
-export const fetchEvents = createAsyncThunk('eventpro/events/fetchEvents', async (_, { getState, rejectWithValue }) => {
+export const fetchEvents = createAsyncThunk('eventpro/events/fetchEvents', async (_, { getState, dispatch, rejectWithValue }) => {
   const { token } = getState().eventpro.auth;
   if (!token) {
+    dispatch(logout());
+    toast.error('User is not authenticated');
     return rejectWithValue('User is not authenticated');
   }
   try {
@@ -20,15 +23,22 @@ export const fetchEvents = createAsyncThunk('eventpro/events/fetchEvents', async
     });
     return res.data;
   } catch (error) {
-    console.error('Error fetching events:', error);
-    toast.error('Error fetching events');
+    console.error('eventSlice.js - Error fetching events:', error);
+    if (error.response?.status === 401) {
+      dispatch(logout());
+      toast.error('Session expired. Please log in again.');
+    } else {
+      toast.error(error.response?.data?.message || 'Failed to fetch events');
+    }
     return rejectWithValue(error.response?.data?.message || 'Failed to fetch events');
   }
 });
 
-export const addEvent = createAsyncThunk('eventpro/events/addEvent', async (event, { getState, rejectWithValue }) => {
+export const addEvent = createAsyncThunk('eventpro/events/addEvent', async (event, { getState, dispatch, rejectWithValue }) => {
   const { token } = getState().eventpro.auth;
   if (!token) {
+    dispatch(logout());
+    toast.error('User is not authenticated');
     return rejectWithValue('User is not authenticated');
   }
   try {
@@ -38,15 +48,22 @@ export const addEvent = createAsyncThunk('eventpro/events/addEvent', async (even
     toast.success('Event added successfully!');
     return res.data;
   } catch (error) {
-    console.error('Error adding event:', error);
-    toast.error('Error adding event');
+    console.error('eventSlice.js - Error adding event:', error);
+    if (error.response?.status === 401) {
+      dispatch(logout());
+      toast.error('Session expired. Please log in again.');
+    } else {
+      toast.error(error.response?.data?.message || 'Failed to add event');
+    }
     return rejectWithValue(error.response?.data?.message || 'Failed to add event');
   }
 });
 
-export const updateEvent = createAsyncThunk('eventpro/events/updateEvent', async (event, { getState, rejectWithValue }) => {
+export const updateEvent = createAsyncThunk('eventpro/events/updateEvent', async (event, { getState, dispatch, rejectWithValue }) => {
   const { token } = getState().eventpro.auth;
   if (!token) {
+    dispatch(logout());
+    toast.error('User is not authenticated');
     return rejectWithValue('User is not authenticated');
   }
   try {
@@ -65,15 +82,22 @@ export const updateEvent = createAsyncThunk('eventpro/events/updateEvent', async
     toast.success('Event updated successfully!');
     return res.data;
   } catch (error) {
-    console.error('Error updating event:', error);
-    toast.error('Error updating event');
+    console.error('eventSlice.js - Error updating event:', error);
+    if (error.response?.status === 401) {
+      dispatch(logout());
+      toast.error('Session expired. Please log in again.');
+    } else {
+      toast.error(error.response?.data?.message || 'Failed to update event');
+    }
     return rejectWithValue(error.response?.data?.message || 'Failed to update event');
   }
 });
 
-export const deleteEvent = createAsyncThunk('eventpro/events/deleteEvent', async (eventId, { getState, rejectWithValue }) => {
+export const deleteEvent = createAsyncThunk('eventpro/events/deleteEvent', async (eventId, { getState, dispatch, rejectWithValue }) => {
   const { token } = getState().eventpro.auth;
   if (!token) {
+    dispatch(logout());
+    toast.error('User is not authenticated');
     return rejectWithValue('User is not authenticated');
   }
   try {
@@ -83,8 +107,13 @@ export const deleteEvent = createAsyncThunk('eventpro/events/deleteEvent', async
     toast.success('Event deleted successfully!');
     return eventId;
   } catch (error) {
-    console.error('Error deleting event:', error);
-    toast.error('Error deleting event');
+    console.error('eventSlice.js - Error deleting event:', error);
+    if (error.response?.status === 401) {
+      dispatch(logout());
+      toast.error('Session expired. Please log in again.');
+    } else {
+      toast.error(error.response?.data?.message || 'Failed to delete event');
+    }
     return rejectWithValue(error.response?.data?.message || 'Failed to delete event');
   }
 });
