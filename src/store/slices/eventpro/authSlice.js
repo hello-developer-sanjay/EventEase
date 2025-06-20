@@ -4,6 +4,22 @@ import { toast } from 'react-toastify';
 import { setAuthToken } from '../../../eventpro/utils/setAuthToken';
 import apiConfig from '../../../shared/utils/apiConfig';
 
+// Axios interceptor for 401 handling
+axios.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      console.error('authSlice.js - 401 Unauthorized, logging out');
+      localStorage.removeItem('eventproToken');
+      localStorage.removeItem('eventproUser');
+      setAuthToken(null);
+      toast.error('Session expired. Please log in again.');
+      window.location.href = '/event-form';
+    }
+    return Promise.reject(error);
+  }
+);
+
 const initialState = {
   token: localStorage.getItem('eventproToken') || null,
   user: JSON.parse(localStorage.getItem('eventproUser')) || null,
@@ -67,9 +83,6 @@ export const loadUser = createAsyncThunk('eventpro/auth/loadUser', async (_, { r
     return res.data.user;
   } catch (error) {
     console.error('authSlice.js - loadUser error:', error.message);
-    localStorage.removeItem('eventproToken');
-    localStorage.removeItem('eventproUser');
-    setAuthToken(null);
     return rejectWithValue(error.response?.data?.message || 'Failed to load user');
   }
 });
