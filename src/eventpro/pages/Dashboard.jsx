@@ -54,27 +54,31 @@ const Dashboard = () => {
   const { user, isAuthenticated, error } = useSelector((state) => state.eventpro.auth);
 
   useEffect(() => {
+    console.log('Dashboard.jsx - Checking auth:', { isAuthenticated, user });
     const token = localStorage.getItem('eventproToken');
     if (token && !isAuthenticated) {
       dispatch(loadUser()).catch((err) => {
-        console.error('Failed to load user:', err);
+        console.error('Dashboard.jsx - loadUser failed:', err);
         dispatch(logout());
         toast.error('Session expired. Please log in again.');
         navigate('/event-form', { replace: true });
       });
     }
     if (error) {
+      console.log('Dashboard.jsx - Error:', error);
       toast.error(error);
       dispatch(clearError());
     }
   }, [dispatch, isAuthenticated, error, navigate]);
 
   if (!isAuthenticated || !user) {
+    console.log('Dashboard.jsx - Not authenticated, redirecting to /event-form');
     navigate('/event-form', { replace: true });
     return null;
   }
 
   const handleLogout = () => {
+    console.log('Dashboard.jsx - Logging out');
     dispatch(logout());
     toast.success('Logged out successfully.');
     navigate('/event-form', { replace: true });
