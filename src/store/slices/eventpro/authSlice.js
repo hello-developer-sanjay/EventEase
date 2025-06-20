@@ -57,6 +57,9 @@ export const loadUser = createAsyncThunk('eventpro/auth/loadUser', async (_, { r
     const res = await axios.get(`${apiConfig.eventpro}/auth/user`, {
       headers: { 'x-auth-token': token },
     });
+    if (res.data.user.platform !== 'eventpro') {
+      throw new Error('Invalid platform in user data');
+    }
     localStorage.setItem('eventproUser', JSON.stringify(res.data.user));
     console.log('authSlice.js - loadUser success:', res.data.user);
     return res.data.user;
