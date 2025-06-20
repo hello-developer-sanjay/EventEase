@@ -1,16 +1,17 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useEffect, useCallback } from 'react';
+import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { setAuth as setEventEaseAuth } from './store/slices/eventease/authSlice';
-import { setAuth as setEventProAuth, logout } from './store/slices/eventpro/authSlice';
+import { setAuth as setEventProAuth, loadUser, logout } from './store/slices/eventpro/authSlice';
 import Layout from './shared/components/Layout';
 import ErrorBoundary from './shared/components/ErrorBoundary';
 import { toast } from 'react-toastify';
+import { Navigate } from 'react-router-dom';
 
 // Home Page
 import Home from './Home';
 
-// EventEase Pages
+// EventEase Pages and Components
 import Calendar from './eventease/components/Calendar';
 import GoogleCalendarSync from './eventease/components/GoogleCalendarSync';
 import Login from './eventease/pages/Login';
@@ -26,35 +27,124 @@ import Dashboard from './eventpro/pages/Dashboard';
 
 const App = () => {
   const dispatch = useDispatch();
-  const { isAuthenticated: easeAuthenticated } = useSelector((state) => state.eventease.auth);
-  const { isAuthenticated: proAuthenticated, user: proUser } = useSelector((state) => state.eventpro.auth);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { isAuthenticated: easeAuthenticated } = useSelector(state => state.eventease.auth);
+  const { isAuthenticated: proAuthenticated, user: proUser } = useSelector(state => state.eventpro.auth);
 
-  // Sync auth state for both platforms
-  ['eventpro', 'eventease'].forEach((platform) => {
-    const token = localStorage.getItem(`${platform}Token`);
-    const userData = localStorage.getItem(`${platform}User`);
-    const isAuth = platform === 'eventpro' ? proAuthenticated : easeAuthenticated;
-    if (token && userData && !isAuth) {
+  const getPlatformFromPath = useCallback(() => {
+    return location.pathname.startsWith('/eventpro') ? 'eventpro' : 'eventease';
+  }, [location.pathname]);
+
+  const handleAuth = useCallback(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const user = searchParams.get('user');
+    const platform = searchParams.get('platform') || getPlatformFromPath();
+
+    console.log('App.jsx - Raw user query:', user);
+    console.log('App.jsx - Platform:', platform);
+    console.log('App.jsx - Current path:', location.pathname);
+    console.log('App.jsx - Redux state:', { easeAuthenticated, proAuthenticated, proUser });
+
+    if (user) {
       try {
-        const parsedUser = JSON.parse(userData);
-        if (parsedUser._id && parsedUser.email && parsedUser.platform === platform) {
-          const action = platform === 'eventpro' ? setEventProAuth : setEventEaseAuth;
-          dispatch(action({ user: parsedUser, token }));
-          console.log(`App.jsx - Restored ${platform} auth:`, { user: parsedUser._id, email: parsedUser.email });
+        const parsedUser = JSON.parse(decodeURIComponent(user));
+        const token = parsedUser.token;
+        if (!parsedUser._id || !parsedUser.email || !token) {
+          throw new Error('Invalid user data structure');
+        }
+        if (parsedUser.platform !== platform) {
+          console.error('App.jsx - Platform mismatch:', { userPlatform: parsedUser.platform, queryPlatform: platform });
+          toast.error('Platform mismatch. Please log in again.');
+          dispatch(logout());
+          navigate('/event-form', { replace: true });
+          return;
+        }
+        if (platform === 'eventpro') {
+          localStorage.setItem('eventproToken', token);
+          localStorage.setItem('eventproUser', JSON.stringify(parsedUser));
+          dispatch(setEventProAuth({ user: parsedUser, token }));
+          dispatch(loadUser()).then(() => {
+            console.log('App.jsx - loadUser success, navigating to dashboard');
+            navigate(parsedUser.role === 'admin' ? '/eventpro/admin-dashboard' : '/eventpro/dashboard', { replace: true });
+          }).catch((error) => {
+            console.error('App.jsx - loadUser failed:', error);
+            dispatch(logout());
+            toast.error('Failed to load user. Please log in again.');
+            navigate('/event-form', { replace: true });
+          });
         } else {
-          throw new Error('Invalid user data');
+          localStorage.setItem('eventeaseToken', token);
+          localStorage.setItem('eventeaseUser', JSON.stringify(parsedUser));
+          dispatch(setEventEaseAuth({ user: parsedUser, token }));
+          navigate(parsedUser.role === 'admin' ? '/admin-dashboard' : '/eventease', { replace: true });
         }
       } catch (error) {
-        console.error(`App.jsx - Error parsing ${platform} user:`, error);
-        dispatch(platform === 'eventpro' ? logout() : logout());
-        localStorage.removeItem(`${platform}Token`);
-        localStorage.removeItem(`${platform}User`);
-        toast.error(`Invalid ${platform} session. Please log in again.`);
+        console.error('App.jsx - Error parsing user from query:', error, 'Raw user:', user);
+        toast.error('Invalid user data format');
+        dispatch(logout());
+        navigate('/event-form', { replace: true });
+      }
+    } else if (location.pathname.startsWith('/eventease') && !easeAuthenticated) {
+      if (localStorage.getItem('eventeaseToken') && localStorage.getItem('eventeaseUser')) {
+        try {
+          const user = JSON.parse(localStorage.getItem('eventeaseUser') || '{}');
+          const token = localStorage.getItem('eventeaseToken');
+          if (user._id && user.email && token && user.platform === 'eventease') {
+            dispatch(setEventEaseAuth({ user, token }));
+            console.log('App.jsx - Restored EventEase auth from localStorage');
+            navigate(user.role === 'admin' ? '/admin-dashboard' : '/eventease', { replace: true });
+          } else {
+            throw new Error('Invalid localStorage user data');
+          }
+        } catch (error) {
+          console.error('App.jsx - Error parsing localStorage user:', error);
+          toast.error('Invalid stored user data');
+          localStorage.removeItem('eventeaseToken');
+          localStorage.removeItem('eventeaseUser');
+          navigate('/eventease/login', { replace: true });
+        }
+      } else {
+        navigate('/eventease/login', { replace: true });
+      }
+    } else if (location.pathname.startsWith('/eventpro') && !proAuthenticated) {
+      if (localStorage.getItem('eventproToken') && localStorage.getItem('eventproUser')) {
+        try {
+          const user = JSON.parse(localStorage.getItem('eventproUser') || '{}');
+          const token = localStorage.getItem('eventproToken');
+          if (user._id && user.email && token && user.platform === 'eventpro') {
+            dispatch(setEventProAuth({ user, token }));
+            dispatch(loadUser()).then(() => {
+              console.log('App.jsx - loadUser success, navigating to dashboard');
+              navigate(user.role === 'admin' ? '/eventpro/admin-dashboard' : '/eventpro/dashboard', { replace: true });
+            }).catch((error) => {
+              console.error('App.jsx - loadUser failed:', error);
+              dispatch(logout());
+              toast.error('Failed to load user. Please log in again.');
+              navigate('/event-form', { replace: true });
+            });
+          } else {
+            throw new Error('Invalid localStorage user data');
+          }
+        } catch (error) {
+          console.error('App.jsx - Error parsing localStorage user:', error);
+          toast.error('Invalid stored user data');
+          dispatch(logout());
+          localStorage.removeItem('eventproToken');
+          localStorage.removeItem('eventproUser');
+          navigate('/event-form', { replace: true });
+        }
+      } else if (location.pathname !== '/event-form') {
+        console.log('App.jsx - No token, redirecting to /event-form');
+        navigate('/event-form', { replace: true });
       }
     }
-  });
+  }, [dispatch, navigate, getPlatformFromPath, easeAuthenticated, proAuthenticated, proUser]);
 
-  console.log('App.jsx - Rendering:', { easeAuthenticated, proAuthenticated, proUser, path: window.location.pathname });
+  useEffect(() => {
+    console.log('App.jsx - Running handleAuth');
+    handleAuth();
+  }, [handleAuth]);
 
   return (
     <ErrorBoundary>
@@ -62,10 +152,7 @@ const App = () => {
         <Routes>
           <Route path="/" element={<Home />} />
           {/* EventEase Routes */}
-          <Route
-            path="/eventease"
-            element={easeAuthenticated ? <Calendar /> : <Navigate to="/eventease/login" replace />}
-          />
+          <Route path="/eventease" element={<Calendar />} />
           <Route path="/eventease/login" element={<Login />} />
           <Route path="/eventease/sync-google-calendar" element={<GoogleCalendarSync />} />
           <Route path="/eventease/create-event" element={<Calendar />} />
@@ -100,7 +187,7 @@ const App = () => {
               proAuthenticated && proUser?.role === 'admin' ? (
                 <Dashboard />
               ) : (
-                <Navigate to={proAuthenticated ? '/eventpro/dashboard' : '/event-form'} replace />
+                <Navigate to="/event-form" replace />
               )
             }
           />
