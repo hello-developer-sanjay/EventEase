@@ -1,11 +1,12 @@
 import React, { useEffect, useCallback } from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { setAuth as setEventEaseAuth } from './store/slices/eventease/authSlice';
 import { setAuth as setEventProAuth, loadUser, logout } from './store/slices/eventpro/authSlice';
 import Layout from './shared/components/Layout';
 import ErrorBoundary from './shared/components/ErrorBoundary';
 import { toast } from 'react-toastify';
+import { Navigate } from 'react-router-dom';
 
 // Home Page
 import Home from './Home';
@@ -29,7 +30,7 @@ const App = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isAuthenticated: easeAuthenticated } = useSelector(state => state.eventease.auth);
-  const { isAuthenticated: proAuthenticated } = useSelector(state => state.eventpro.auth);
+  const { isAuthenticated: proAuthenticated, user: proUser } = useSelector(state => state.eventpro.auth);
 
   const handleAuth = useCallback(() => {
     const searchParams = new URLSearchParams(location.search);
@@ -39,7 +40,7 @@ const App = () => {
     console.log('App.jsx - Raw user query:', user);
     console.log('App.jsx - Platform:', platform);
     console.log('App.jsx - Current path:', location.pathname);
-    console.log('App.jsx - Redux state:', { easeAuthenticated, proAuthenticated });
+    console.log('App.jsx - Redux state:', { easeAuthenticated, proAuthenticated, proUser });
 
     if (user) {
       try {
@@ -88,6 +89,7 @@ const App = () => {
           if (user._id && user.email && token && user.platform === 'eventease') {
             dispatch(setEventEaseAuth({ user, token }));
             console.log('App.jsx - Restored EventEase auth from localStorage');
+            navigate(user.role === 'admin' ? '/admin-dashboard' : '/eventease', { replace: true });
           } else {
             throw new Error('Invalid localStorage user data');
           }
@@ -133,7 +135,7 @@ const App = () => {
         navigate('/event-form', { replace: true });
       }
     }
-  }, [dispatch, navigate, location.pathname, easeAuthenticated, proAuthenticated]);
+  }, [dispatch, navigate, location.pathname]);
 
   useEffect(() => {
     console.log('App.jsx - Running handleAuth');
