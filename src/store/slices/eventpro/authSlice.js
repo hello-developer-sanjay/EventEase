@@ -12,6 +12,22 @@ const initialState = {
   error: null,
 };
 
+// Global axios interceptor for 401 errors
+axios.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      console.error('authSlice.js - 401 Unauthorized, logging out');
+      localStorage.removeItem('eventproToken');
+      localStorage.removeItem('eventproUser');
+      setAuthToken(null);
+      toast.error('Session expired. Please log in again.');
+      window.location.href = '/event-form';
+    }
+    return Promise.reject(error);
+  }
+);
+
 export const register = createAsyncThunk('eventpro/auth/register', async (userData, { rejectWithValue }) => {
   try {
     const res = await axios.post(`${apiConfig.eventpro}/auth/register`, { ...userData, platform: 'eventpro' }, {
@@ -31,9 +47,7 @@ export const register = createAsyncThunk('eventpro/auth/register', async (userDa
 
 export const login = createAsyncThunk('eventpro/auth/login', async ({ email, password, platform }, { rejectWithValue }) => {
   try {
-    const res = await axios.post(`${apiConfig.eventpro}/auth/login`, { email, password, platform }, {
-      headers: { 'Content-Type': 'application/json' },
-    });
+    const res = await axios.post(`${apiConfig.eventpro}/auth/login`, { email, password, platform }, { headers: { 'Content-Type': 'application/json' } });
     localStorage.setItem('eventproToken', res.data.token);
     localStorage.setItem('eventproUser', JSON.stringify(res.data.user));
     setAuthToken(res.data.token);
@@ -60,8 +74,8 @@ export const loadUser = createAsyncThunk('eventpro/auth/loadUser', async (_, { r
     if (res.data.user.platform !== 'eventpro') {
       throw new Error('Invalid platform in user data');
     }
-    localStorage.setItem('eventproUser', JSON.stringify(res.data.user));
-    console.log('authSlice.js - loadUser success:', res.data.user);
+    localStorage.setItem('eventproUser', JSON.stringify(res.data.user.data.user));
+    console.log('authSlice.js - loadUser success:', res.data.user.user);
     return res.data.user;
   } catch (error) {
     console.error('authSlice.js - Error loading user:', error);
@@ -87,6 +101,7 @@ const authSlice = createSlice({
       state.error = null;
       localStorage.setItem('eventproToken', action.payload.token);
       localStorage.setItem('eventproUser', JSON.stringify(action.payload.user));
+      console.log('authSlice.js - setAuth:', { user: action.payload.user, token: action.payload.token });
     },
     logout(state) {
       state.token = null;
