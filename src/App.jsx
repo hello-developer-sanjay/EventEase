@@ -24,48 +24,6 @@ import SignInSignUp from './eventpro/components/SignInSignUp';
 import Register from './eventpro/pages/Register';
 import Dashboard from './eventpro/pages/Dashboard';
 
-const PrivateRoute = ({ element, isAdminRoute = false, platform }) => {
-  const dispatch = useDispatch();
-  const eventProAuth = useSelector((state) => state.eventpro.auth);
-  const eventEaseAuth = useSelector((state) => state.eventease.auth);
-  const token = localStorage.getItem(`${platform}Token`);
-  const userData = localStorage.getItem(`${platform}User`);
-
-  const authState = platform === 'eventpro' ? eventProAuth : eventEaseAuth;
-  const { isAuthenticated, user } = authState;
-
-  console.log(`PrivateRoute - ${platform} - Checking auth:`, { isAuthenticated, user, token });
-
-  if (!isAuthenticated || !token || !userData) {
-    console.log(`PrivateRoute - ${platform} - Not authenticated, redirecting`);
-    if (token || userData) {
-      dispatch(platform === 'eventpro' ? logout() : logout()); // Use EventEase logout if needed
-      toast.error('Session invalid. Please log in again.');
-    }
-    return <Navigate to={platform === 'eventpro' ? '/event-form' : '/eventease/login'} replace />;
-  }
-
-  try {
-    const parsedUser = JSON.parse(userData);
-    if (!parsedUser._id || !parsedUser.email || parsedUser.platform !== platform) {
-      console.error(`PrivateRoute - ${platform} - Invalid user data:`, parsedUser);
-      dispatch(platform === 'eventpro' ? logout() : logout());
-      toast.error('Invalid user data. Please log in again.');
-      return <Navigate to={platform === 'eventpro' ? '/event-form' : '/eventease/login'} replace />;
-    }
-    if (isAdminRoute && parsedUser.role !== 'admin') {
-      console.log(`PrivateRoute - ${platform} - Not admin, redirecting`);
-      return <Navigate to={`/${platform}/dashboard`} replace />;
-    }
-    return element;
-  } catch (error) {
-    console.error(`PrivateRoute - ${platform} - Error parsing user data:`, error);
-    dispatch(platform === 'eventpro' ? logout() : logout());
-    toast.error('Invalid user data. Please log in again.');
-    return <Navigate to={platform === 'eventpro' ? '/event-form' : '/eventease/login'} replace />;
-  }
-};
-
 const App = () => {
   const dispatch = useDispatch();
   const { isAuthenticated: easeAuthenticated } = useSelector((state) => state.eventease.auth);
@@ -83,12 +41,15 @@ const App = () => {
           const action = platform === 'eventpro' ? setEventProAuth : setEventEaseAuth;
           dispatch(action({ user: parsedUser, token }));
           console.log(`App.jsx - Restored ${platform} auth:`, { user: parsedUser._id, email: parsedUser.email });
+        } else {
+          throw new Error('Invalid user data');
         }
       } catch (error) {
         console.error(`App.jsx - Error parsing ${platform} user:`, error);
         dispatch(platform === 'eventpro' ? logout() : logout());
         localStorage.removeItem(`${platform}Token`);
         localStorage.removeItem(`${platform}User`);
+        toast.error(`Invalid ${platform} session. Please log in again.`);
       }
     }
   });
@@ -103,24 +64,45 @@ const App = () => {
           {/* EventEase Routes */}
           <Route
             path="/eventease"
-            element={<PrivateRoute element={<Calendar />} platform="eventease" />}
+            element={easeAuthenticated ? <Calendar /> : <Navigate to="/eventease/login" replace />}
           />
           <Route path="/eventease/login" element={<Login />} />
           <Route path="/eventease/sync-google-calendar" element={<GoogleCalendarSync />} />
           <Route path="/eventease/create-event" element={<Calendar />} />
           {/* EventPro Routes */}
-          <Route path="/eventpro" element={<PrivateRoute element={<ListEventsPage />} platform="eventpro" />} />
-          <Route path="/eventpro/add-event" element={<PrivateRoute element={<AddEventPage />} platform="eventpro" />} />
-          <Route path="/eventpro/add-event/:id" element={<PrivateRoute element={<AddEventPage />} platform="eventpro" />} />
+          <Route
+            path="/eventpro"
+            element={proAuthenticated ? <ListEventsPage /> : <Navigate to="/event-form" replace />}
+          />
+          <Route
+            path="/eventpro/add-event"
+            element={proAuthenticated ? <AddEventPage /> : <Navigate to="/event-form" replace />}
+          />
+          <Route
+            path="/eventpro/add-event/:id"
+            element={proAuthenticated ? <AddEventPage /> : <Navigate to="/event-form" replace />}
+          />
           <Route path="/eventpro/register" element={<Register />} />
           <Route path="/eventpro/forgot-password" element={<ForgotPassword />} />
           <Route path="/eventpro/reset-password/:token" element={<ResetPassword />} />
-          <Route path="/eventpro/dashboard" element={<PrivateRoute element={<Dashboard />} platform="eventpro" />} />
+          <Route
+            path="/eventpro/dashboard"
+            element={proAuthenticated ? <Dashboard /> : <Navigate to="/event-form" replace />}
+          />
           <Route path="/event-form" element={<SignInSignUp platform="eventpro" />} />
-          <Route path="/eventpro/list-events" element={<PrivateRoute element={<ListEventsPage />} platform="eventpro" />} />
+          <Route
+            path="/eventpro/list-events"
+            element={proAuthenticated ? <ListEventsPage /> : <Navigate to="/event-form" replace />}
+          />
           <Route
             path="/eventpro/admin-dashboard"
-            element={<PrivateRoute element={<Dashboard />} platform="eventpro" isAdminRoute={true} />}
+            element={
+              proAuthenticated && proUser?.role === 'admin' ? (
+                <Dashboard />
+              ) : (
+                <Navigate to={proAuthenticated ? '/eventpro/dashboard' : '/event-form'} replace />
+              )
+            }
           />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
