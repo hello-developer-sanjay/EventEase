@@ -23,14 +23,19 @@ export const getEvents = createAsyncThunk('eventease/events/getEvents', async (_
     console.error('getEvents error:', error, 'Response:', error.response);
     toast.error(message);
     const localEvents = JSON.parse(localStorage.getItem('eventeaseEvents')) || [];
-    return localEvents; // Fallback to localStorage
+    return localEvents;
   }
 });
 
 export const createEvent = createAsyncThunk('eventease/events/createEvent', async (eventData, { getState, rejectWithValue }) => {
   try {
     const { token, user } = getState().eventease.auth;
-    const data = { ...eventData, userId: user?._id };
+    const data = {
+      ...eventData,
+      userId: user?._id,
+      start: new Date(eventData.start).toISOString(),
+      end: new Date(eventData.end).toISOString(),
+    };
     console.log('Creating event with data:', data, 'Token:', token);
     const res = await axios.post(`${apiConfig.eventease}/events`, data, {
       headers: { 'x-auth-token': token, 'Content-Type': 'application/json' },
@@ -44,9 +49,14 @@ export const createEvent = createAsyncThunk('eventease/events/createEvent', asyn
     const message = error.response?.data?.message || 'Failed to create event';
     console.error('createEvent error:', error, 'Response:', error.response, 'EventData:', eventData);
     toast.error(message);
-    // Store locally as fallback
     const localEvents = JSON.parse(localStorage.getItem('eventeaseEvents')) || [];
-    const newEvent = { ...eventData, _id: `local-${Date.now()}`, userId: user?._id };
+    const newEvent = {
+      ...eventData,
+      _id: `local-${Date.now()}`,
+      userId: user?._id,
+      start: new Date(eventData.start).toISOString(),
+      end: new Date(eventData.end).toISOString(),
+    };
     localEvents.push(newEvent);
     localStorage.setItem('eventeaseEvents', JSON.stringify(localEvents));
     return newEvent;
@@ -56,7 +66,12 @@ export const createEvent = createAsyncThunk('eventease/events/createEvent', asyn
 export const updateEvent = createAsyncThunk('eventease/events/updateEvent', async ({ id, eventData }, { getState, rejectWithValue }) => {
   try {
     const { token, user } = getState().eventease.auth;
-    const data = { ...eventData, userId: user?._id };
+    const data = {
+      ...eventData,
+      userId: user?._id,
+      start: new Date(eventData.start).toISOString(),
+      end: new Date(eventData.end).toISOString(),
+    };
     console.log('Updating event with ID:', id, 'Data:', data);
     const res = await axios.put(`${apiConfig.eventease}/events/${id}`, data, {
       headers: { 'x-auth-token': token, 'Content-Type': 'application/json' },
@@ -124,7 +139,7 @@ const eventSlice = createSlice({
       .addCase(createEvent.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
-        state.events.push(action.payload); // Include local event
+        state.events.push(action.payload);
       })
       .addCase(updateEvent.pending, (state) => {
         state.loading = true;
