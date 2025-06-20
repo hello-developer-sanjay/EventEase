@@ -1,12 +1,12 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 import { toast } from 'react-toastify';
-import { setAuthToken } from '../../../eventease/utils/setAuthToken';
+import { setAuthToken } from '../../../shared/utils/setAuthToken';
 import apiConfig from '../../../shared/utils/apiConfig';
 
 const initialState = {
   token: localStorage.getItem('eventproToken') || null,
-  user: JSON.parse(localStorage.getItem('user')) || null,
+  user: JSON.parse(localStorage.getItem('eventproUser')) || null,
   isAuthenticated: false,
   loading: true,
   error: null,
@@ -18,7 +18,7 @@ export const register = createAsyncThunk('eventpro/auth/register', async (userDa
       headers: { 'Content-Type': 'application/json' },
     });
     localStorage.setItem('eventproToken', res.data.token);
-    localStorage.setItem('user', JSON.stringify(res.data.user));
+    localStorage.setItem('eventproUser', JSON.stringify(res.data.user));
     setAuthToken(res.data.token);
     toast.success('Registration successful!');
     return res.data;
@@ -35,7 +35,7 @@ export const login = createAsyncThunk('eventpro/auth/login', async ({ email, pas
       headers: { 'Content-Type': 'application/json' },
     });
     localStorage.setItem('eventproToken', res.data.token);
-    localStorage.setItem('user', JSON.stringify(res.data.user));
+    localStorage.setItem('eventproUser', JSON.stringify(res.data.user));
     setAuthToken(res.data.token);
     toast.success('Login successful!');
     return res.data;
@@ -48,17 +48,21 @@ export const login = createAsyncThunk('eventpro/auth/login', async ({ email, pas
 
 export const loadUser = createAsyncThunk('eventpro/auth/loadUser', async (_, { rejectWithValue }) => {
   const token = localStorage.getItem('eventproToken');
-  if (token) {
-    setAuthToken(token);
+  if (!token) {
+    return rejectWithValue('No token found');
   }
+  setAuthToken(token);
   try {
     const res = await axios.get(`${apiConfig.eventpro}/auth/user`, {
       headers: { 'x-auth-token': token },
     });
-    localStorage.setItem('user', JSON.stringify(res.data.user));
+    localStorage.setItem('eventproUser', JSON.stringify(res.data.user));
     return res.data.user;
   } catch (error) {
     console.error('Error loading user:', error);
+    localStorage.removeItem('eventproToken');
+    localStorage.removeItem('eventproUser');
+    setAuthToken(null);
     return rejectWithValue(error.response?.data?.message || 'Failed to load user');
   }
 });
@@ -77,7 +81,17 @@ const authSlice = createSlice({
       state.loading = false;
       state.error = null;
       localStorage.setItem('eventproToken', action.payload.token);
-      localStorage.setItem('user', JSON.stringify(action.payload.user));
+      localStorage.setItem('eventproUser', JSON.stringify(action.payload.user));
+    },
+    logout(state) {
+      state.token = null;
+      state.user = null;
+      state.isAuthenticated = false;
+      state.loading = false;
+      state.error = null;
+      localStorage.removeItem('eventproToken');
+      localStorage.removeItem('eventproUser');
+      setAuthToken(null);
     },
   },
   extraReducers: (builder) => {
@@ -122,12 +136,14 @@ const authSlice = createSlice({
         state.loading = false;
       })
       .addCase(loadUser.rejected, (state, action) => {
-        state.loading = false;
+        state.token = null;
+        state.user = null;
         state.isAuthenticated = false;
+        state.loading = false;
         state.error = action.payload;
       });
   },
 });
 
-export const { clearError, setAuth } = authSlice.actions;
+export const { clearError, setAuth, logout } = authSlice.actions;
 export default authSlice.reducer;
