@@ -38,7 +38,7 @@ const Calendar = () => {
   const events = useSelector(state => state.eventease?.events?.events || []);
   const googleCalendarEvents = useSelector(state => state.eventease?.googleCalendar?.events || []);
   const eventError = useSelector(state => state.eventease?.events?.error);
-  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [selectedEvent, setSelectedEvent ] = useState(null);
   const [showEventForm, setShowEventForm] = useState(false);
 
   useEffect(() => {
@@ -56,7 +56,7 @@ const Calendar = () => {
       participants: user?.email || '',
       date: moment(start).format('YYYY-MM-DD'),
       time: moment(start).format('HH:mm'),
-      duration: '',
+      duration: '30',
       sessionNotes: '',
       userId: user?._id,
     });
@@ -68,6 +68,7 @@ const Calendar = () => {
       ...event,
       date: moment(event.start).format('YYYY-MM-DD'),
       time: moment(event.start).format('HH:mm'),
+      duration: event.duration || '30',
       userId: user?._id,
     });
     setShowEventForm(true);
@@ -84,92 +85,78 @@ const Calendar = () => {
       }
     } catch (error) {
       toast.error(error.message || 'Failed to create event');
-    }
-  };
+      }
+    };
 
   const handleUpdateEvent = async (eventData) => {
-    try {
-      const action = await dispatch(updateEvent({ id: selectedEvent._id, eventData }));
-      if (updateEvent.fulfilled.match(action)) {
-        toast.success('Event updated successfully');
-        setShowEventForm(false);
-      } else {
-        toast.error(action.payload || 'Failed to update event');
+      try {
+        const action = await dispatch(updateEvent({ id: selectedEvent._id, eventData }));
+        if (updateEvent.fulfilled.match(action)) {
+          toast.success('Event updated successfully');
+          setShowEventForm(false);
+        } else {
+          toast.error(action.payload || 'Failed to update event');
+        }
+      } catch (error) {
+        toast.error(error.message || 'Failed to update event');
       }
-    } catch (error) {
-      toast.error(error.message || 'Failed to update event');
-    }
-  };
+      };
 
-  const handleDeleteEvent = async () => {
-    try {
-      const action = await dispatch(deleteEvent(selectedEvent._id));
-      if (deleteEvent.fulfilled.match(action)) {
-        toast.success('Event deleted successfully');
-        setShowEventForm(false);
-      } else {
-        toast.error(action.payload || 'Failed to delete event');
+      if (loading) {
+        return <LoginPrompt />;
       }
-    } catch (error) {
-      toast.error(error.message || 'Failed to delete event');
-    }
-  };
 
-  if (loading) {
-    return <LoginPrompt />;
-  }
+      if (!isAuthenticated || !user?.user_id) {
+        return <LoginPrompt />;
+      }
 
-  if (!isAuthenticated || !user?._id) {
-    return <LoginPrompt />;
-  }
+      if (authError || eventError) {
+        return <ErrorMessage>Error: {authError || eventError}</ErrorMessage>;
+      }
 
-  if (authError || eventError) {
-    return <ErrorMessage>Error: {authError || eventError}</ErrorMessage>;
-  }
+      const formatEvents = (events) => {
+        console.log('Formatting events:', events);
+        return events
+          .filter(event => event && (typeof event === 'object' && (event.start || event.date))) // Ensure valid objects
+          .map(event => {
+            const start = event.start || event.date;
+            const end = event?.end || event.date;
+            return {
+              ...event,
+              start: start ? new Date(start) : new Date(),
+              end: end ? new Date(end) : new Date(start),
+            };
+          })
+          .filter(event => event.start && event.end && !isNaN(event.start.getTime()) && !isNaN(event.end.getTime()));
+      };
 
-  const formatEvents = (events) => {
-    console.log('Formatting events:', events); // Debug events
-    return events
-      .filter(event => event && (event.start || event.date)) // Ensure event has start or date
-      .map(event => {
-        const start = event.start || event.date;
-        const end = event.end || event.date;
-        return {
-          ...event,
-          start: start ? new Date(start) : new Date(),
-          end: end ? new Date(end) : new Date(),
-        };
-      })
-      .filter(event => event.start && event.end && !isNaN(event.start.getTime()) && !isNaN(event.end.getTime()));
-  };
+      const mergedEvents = formatEvents([...events, ...googleCalendarEvents]);
 
-  const mergedEvents = formatEvents([...events, ...googleCalendarEvents]);
+      return (
+        <Container>
+          <Title>My Calendar</Title>
+          <BigCalendar
+            localizer={momentLocalizer(moment)}
+            events={mergedEvents}
+            startAccessor="start"
+            endAccessor="end"
+            style={{ height: 500 }}
+            selectable
+            onSelectSlot={handleSelectSlot}
+            onSelectEvent={handleSelectEvent}
+          />
+          {showEventForm && selectedEvent && (
+            <EventForm
+              event={selectedEvent}
+              onClose={() => setShowEventForm(false)}
+              onCreate={handleCreateEvent}
+              onUpdate={handleUpdateEvent}
+              onDelete={handleDeleteEvent}
+            />
+          )}
+          <GoogleCalendarSync />
+        </Container>
+      );
+    };
 
-  return (
-    <Container>
-      <Title>My Calendar</Title>
-      <BigCalendar
-        localizer={momentLocalizer(moment)}
-        events={mergedEvents}
-        startAccessor="start"
-        endAccessor="end"
-        style={{ height: 500 }}
-        selectable
-        onSelectSlot={handleSelectSlot}
-        onSelectEvent={handleSelectEvent}
-      />
-      {showEventForm && selectedEvent && (
-        <EventForm
-          event={selectedEvent}
-          onClose={() => setShowEventForm(false)}
-          onCreate={handleCreateEvent}
-          onUpdate={handleUpdateEvent}
-          onDelete={handleDeleteEvent}
-        />
-      )}
-      <GoogleCalendarSync />
-    </Container>
-  );
-};
-
-export default Calendar;
+    export default Calendar;
