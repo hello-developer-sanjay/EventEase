@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
-import { loadUser as loadEventEaseUser, setAuth } from './store/slices/eventease/authSlice';
+import { setAuth } from './store/slices/eventease/authSlice';
 import { loadUser as loadEventProUser } from './store/slices/eventpro/authSlice';
 import Layout from './shared/components/Layout';
 import ErrorBoundary from './shared/components/ErrorBoundary';
@@ -32,29 +32,38 @@ const App = () => {
     const user = searchParams.get('user');
     const token = searchParams.get('token');
 
+    console.log('Raw user query:', user); // Debug raw user data
+    console.log('Raw token query:', token);
+
     if (user && token) {
       try {
         const parsedUser = JSON.parse(decodeURIComponent(user));
-        // Directly set auth state
+        if (!parsedUser._id || !parsedUser.email) {
+          throw new Error('Invalid user data structure');
+        }
         dispatch(setAuth({ user: parsedUser, token }));
         navigate(parsedUser.role === 'admin' ? '/admin-dashboard' : '/eventease');
       } catch (error) {
-        console.error('Error parsing user from query:', error);
-        toast.error('Invalid user data');
+        console.error('Error parsing user from query:', error, 'Raw user:', user);
+        toast.error('Invalid user data format');
         navigate('/eventease/login');
       }
     } else if (localStorage.getItem('eventeaseToken') && localStorage.getItem('user')) {
-      const user = JSON.parse(localStorage.getItem('user') || '{}');
-      dispatch(loadEventEaseUser()).catch(() => {
-        // Fallback to localStorage
-        dispatch(setAuth({ user, token: localStorage.getItem('eventeaseToken') }));
-        navigate(user.role === 'admin' ? '/admin-dashboard' : '/eventease');
-      });
-    } else {
-      dispatch(loadEventEaseUser()).catch(error => {
-        console.error('EventEase loadUser failed:', error);
+      try {
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        if (user._id && user.email) {
+          dispatch(setAuth({ user, token: localStorage.getItem('eventeaseToken') }));
+          navigate(user.role === 'admin' ? '/admin-dashboard' : '/eventease');
+        } else {
+          throw new Error('Invalid localStorage user data');
+        }
+      } catch (error) {
+        console.error('Error parsing localStorage user:', error);
+        toast.error('Invalid stored user data');
         navigate('/eventease/login');
-      });
+      }
+    } else {
+      navigate('/eventease/login');
     }
     dispatch(loadEventProUser()).catch(error => console.error('EventPro loadUser failed:', error));
   }, [dispatch, location.search, navigate]);
