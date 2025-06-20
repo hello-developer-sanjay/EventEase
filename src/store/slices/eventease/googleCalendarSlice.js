@@ -42,7 +42,7 @@ const googleCalendarSlice = createSlice({
         state.error = null;
       })
       .addCase(syncGoogleCalendar.fulfilled, (state, action) => {
-        state.events = action.payload.events?.filter(event => event.start && event.end) || [];
+        state.events = action.payload.events?.filter(event => typeof event === 'object' && event.start && event.end && event._id) || [];
         state.syncStatus = action.payload.status;
         state.accessToken = action.payload.accessToken;
         state.refreshToken = action.payload.refreshToken;
