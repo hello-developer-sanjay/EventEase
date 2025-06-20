@@ -1,61 +1,61 @@
-import React, { useState } from "react";
-import { useDispatch } from "react-redux";
-import { useNavigate } from "react-router-dom";
-import { login as loginEventPro } from "../auth/login";
-import styled, { keyframes } from "styled-components";
-import { RingLoader } from "react-spinners";
-import { faGoogle } from "@fortawesome/free-brands-svg-icons";
-import PropTypes from "prop-types";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import React, { useState } from 'react';
+import { useDispatch } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
+import { login } from '../../store/slices/eventpro/authSlice';
+import styled, { keyframes } from 'styled-components';
+import { RingLoader } from 'react-spinners';
+import { faGoogle } from '@fortawesome/free-brands-svg-icons';
+import PropTypes from 'prop-types';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const Container = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  padding: 20px;
-  background: url("https://sanjay-basket.s3.ap-south-1.amazonaws.com/events.webp") no-repeat center center fixed;
+  padding: 2rem;
+  background: url('https://sanjaybasket.s3.ap-south-1.amazonaws.com/background.webp') no-repeat center center fixed;
   background-size: cover;
 `;
 
 const LoginForm = styled.form`
   background: linear-gradient(135deg, #3a3a3a, #1e1e1e);
-  padding: 20px;
+  padding: 2rem;
   border-radius: 20px;
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
   max-width: 400px;
   width: 100%;
   transform: perspective(1000px) rotateY(10deg);
-  transition: transform 0.5s ease-in-out, box-shadow 0.5s ease-in-out;
+  transition: transform 0.5s ease, box-shadow 0.5s ease;
   &:hover {
     transform: perspective(1000px) rotateY(0);
-    box-shadow: 0 0 20px rgba(255, 255, 0.5);
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
   }
 `;
 
 const fadeIn = keyframes`
-  from { opacity: 0; transform: translateY(-20px); }
-  to { opacity: 1; transform: translateY(0); }
+  0% { opacity: 0; transform: translateY(-20px); }
+  100% { opacity: 1; transform: translateY(0); }
 `;
 
 const Title = styled.h2`
-  font-family: "Cinzel", serif;
+  font-family: 'Cinzel Decorative', cursive;
   color: #d4af37;
   text-align: center;
   margin-bottom: 2rem;
   animation: ${fadeIn} 1s ease-in-out;
-  text-shadow: 0 0 10px rgba(255, 255, 0.5);
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
 `;
 
 const Input = styled.input`
-  padding: 10px;
-  margin-bottom: 10px;
+  padding: 0.5rem;
+  margin-bottom: 1rem;
   border: 2px solid #d4af37;
-  border-radius: 8px;
-  font-size: 16px;
+  border-radius: 10px;
+  font-size: 1rem;
   width: 100%;
   background-color: #2a2a2a;
   color: #fff;
@@ -63,24 +63,24 @@ const Input = styled.input`
   &:focus {
     border-color: #d4af37;
     outline: none;
-    box-shadow: 0 0 8px rgba(212, 175, 55, 0.5);
+    box-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
   }
 `;
 
 const Button = styled.button`
-  padding: 12px 20px;
+  padding: 0.5rem 1rem;
   background-color: #d4af37;
-  color: #000;
+  color: black;
   border: none;
-  border-radius: 8px;
-  font-size: 16px;
+  border-radius: 10px;
+  font-size: 0.9rem;
   cursor: pointer;
-  margin-top: 10px;
-  transition: background-color 0.3s, transform 0.3s, box-shadow: 0.3s;
+  margin-top: 1rem;
+  transition: background-color 0.3s, transform 0.3s, box-shadow 0.3s;
   &:hover {
     background-color: #e5c370;
     transform: scale(1.05);
-    box-shadow: 0 0 10px rgba(255,255,255, 0.5);
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
   }
 `;
 
@@ -89,14 +89,14 @@ const GoogleButton = styled(Button)`
   align-items: center;
   justify-content: center;
   background-color: #db4437;
-  color: #fff;
+  color: white;
   &:hover {
     background-color: #c23321;
   }
 `;
 
 const GoogleIcon = styled(FontAwesomeIcon)`
-  margin-right: 8px;
+  margin-right: 0.5rem;
 `;
 
 const PasswordContainer = styled.div`
@@ -106,7 +106,7 @@ const PasswordContainer = styled.div`
 const ToggleIcon = styled(FontAwesomeIcon)`
   position: absolute;
   right: 10px;
-  top: 50%;
+  top: 35%;
   transform: translateY(-50%);
   cursor: pointer;
   color: #d4af37;
@@ -115,7 +115,7 @@ const ToggleIcon = styled(FontAwesomeIcon)`
 const SignInSignUp = ({ platform }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({ email: "", password: "" });
+  const [formData, setFormData] = useState({ email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -133,19 +133,19 @@ const SignInSignUp = ({ platform }) => {
     e.preventDefault();
     setLoading(true);
     try {
-      const response = await dispatch(loginEventPro({ email, password, platform })).unwrap();
+      const response = await dispatch(login({ email, password, platform })).unwrap();
       setLoading(false);
-      toast.success("Login successful");
-      localStorage.setItem(`${platform}Token`, response.token);
-      localStorage.setItem(`${platform}User`, JSON.stringify(response.user));
-      if (response.user.role === "admin") {
+      toast.success('Login successful');
+      localStorage.setItem('eventproToken', response.token);
+      localStorage.setItem('eventproUser', JSON.stringify(response.user));
+      if (response.user.role === 'admin') {
         navigate(`/${platform}/admin-dashboard`);
       } else {
         navigate(`/${platform}/dashboard`);
       }
     } catch (error) {
       setLoading(false);
-      toast.error(error || "Invalid email or password");
+      toast.error(error || 'Invalid email or password');
     }
   };
 
@@ -153,11 +153,10 @@ const SignInSignUp = ({ platform }) => {
     window.location.href = `https://eventmanager-api-19july.onrender.com/api/auth/google?platform=${platform}`;
   };
 
-  
   return (
     <Container>
       <LoginForm onSubmit={handleSubmit}>
-        <Title aria-label={`${platform} Title`}>{platform === "eventpro" ? "EventPro" : "EventEase"}</Title>
+        <Title aria-label={`${platform} Title`}>{platform === 'eventpro' ? 'EventPro' : 'EventEase'}</Title>
         <Input
           type="email"
           placeholder="Email"
@@ -169,7 +168,7 @@ const SignInSignUp = ({ platform }) => {
         />
         <PasswordContainer>
           <Input
-            type={showPassword ? "text" : "password"}
+            type={showPassword ? 'text' : 'password'}
             placeholder="Password"
             name="password"
             value={password}
@@ -180,11 +179,11 @@ const SignInSignUp = ({ platform }) => {
           <ToggleIcon
             icon={showPassword ? faEyeSlash : faEye}
             onClick={togglePasswordVisibility}
-            aria-label={showPassword ? "Hide password" : "Show password"}
+            aria-label={showPassword ? 'Hide password' : 'Show password'}
           />
         </PasswordContainer>
         <Button type="submit" aria-label="Login Button">
-          {loading ? <RingLoader color="#000000" loading={loading} size={20} /> : "Login"}
+          {loading ? <RingLoader color="#000000" loading={loading} size={20} /> : 'Login'}
         </Button>
         <GoogleButton onClick={handleGoogleLogin} aria-label="Login with Google">
           <GoogleIcon icon={faGoogle} />
