@@ -1,11 +1,12 @@
 import React, { useEffect, useCallback } from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate ,Navigate} from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { setAuth as setEventEaseAuth } from './store/slices/eventease/authSlice';
 import { setAuth as setEventProAuth, loadUser, logout } from './store/slices/eventpro/authSlice';
 import Layout from './shared/components/Layout';
 import ErrorBoundary from './shared/components/ErrorBoundary';
 import { toast } from 'react-toastify';
+import { Navigate } from 'react-router-dom';
 
 // Home Page
 import Home from './Home';
@@ -34,7 +35,9 @@ const App = () => {
   const handleAuth = useCallback(() => {
     const searchParams = new URLSearchParams(location.search);
     const user = searchParams.get('user');
-    const platform = searchParams.get('platform') || (location.pathname.startsWith('/eventpro') ? 'eventpro' : 'eventease');
+    // Set platform explicitly for EventPro routes, including /event-form
+    const platform = searchParams.get('platform') || 
+      (location.pathname.startsWith('/eventpro') || location.pathname === '/event-form' ? 'eventpro' : 'eventease');
 
     console.log('App.jsx - Raw user query:', user);
     console.log('App.jsx - Platform:', platform);
@@ -59,15 +62,17 @@ const App = () => {
           localStorage.setItem('eventproToken', token);
           localStorage.setItem('eventproUser', JSON.stringify(parsedUser));
           dispatch(setEventProAuth({ user: parsedUser, token }));
-          dispatch(loadUser()).then(() => {
-            console.log('App.jsx - loadUser success, navigating to dashboard');
-            navigate(parsedUser.role === 'admin' ? '/eventpro/admin-dashboard' : '/eventpro/dashboard', { replace: true });
-          }).catch((error) => {
-            console.error('App.jsx - loadUser failed:', error);
-            dispatch(logout());
-            toast.error('Failed to load user. Please log in again.');
-            navigate('/event-form', { replace: true });
-          });
+          setTimeout(() => {
+            dispatch(loadUser()).then(() => {
+              console.log('App.jsx - loadUser success, navigating to dashboard');
+              navigate(parsedUser.role === 'admin' ? '/eventpro/admin-dashboard' : '/eventpro/dashboard', { replace: true });
+            }).catch((error) => {
+              console.error('App.jsx - loadUser failed:', error);
+              dispatch(logout());
+              toast.error('Failed to load user. Please log in again.');
+              navigate('/event-form', { replace: true });
+            });
+          }, 100); // Delay to ensure state update
         } else {
           localStorage.setItem('eventeaseToken', token);
           localStorage.setItem('eventeaseUser', JSON.stringify(parsedUser));
@@ -80,6 +85,10 @@ const App = () => {
         dispatch(logout());
         navigate('/event-form', { replace: true });
       }
+    } else if (platform === 'eventpro' && proAuthenticated && location.pathname === '/event-form') {
+      // Prevent redirect loop for authenticated users on /event-form
+      console.log('App.jsx - Already authenticated for EventPro, navigating to dashboard');
+      navigate(proUser?.role === 'admin' ? '/eventpro/admin-dashboard' : '/eventpro/dashboard', { replace: true });
     } else if (location.pathname.startsWith('/eventease') && !easeAuthenticated) {
       if (localStorage.getItem('eventeaseToken') && localStorage.getItem('eventeaseUser')) {
         try {
@@ -109,15 +118,17 @@ const App = () => {
           const token = localStorage.getItem('eventproToken');
           if (user._id && user.email && token && user.platform === 'eventpro') {
             dispatch(setEventProAuth({ user, token }));
-            dispatch(loadUser()).then(() => {
-              console.log('App.jsx - loadUser success, navigating to dashboard');
-              navigate(user.role === 'admin' ? '/eventpro/admin-dashboard' : '/eventpro/dashboard', { replace: true });
-            }).catch((error) => {
-              console.error('App.jsx - loadUser failed:', error);
-              dispatch(logout());
-              toast.error('Failed to load user. Please log in again.');
-              navigate('/event-form', { replace: true });
-            });
+            setTimeout(() => {
+              dispatch(loadUser()).then(() => {
+                console.log('App.jsx - loadUser success, navigating to dashboard');
+                navigate(user.role === 'admin' ? '/eventpro/admin-dashboard' : '/eventpro/dashboard', { replace: true });
+              }).catch((error) => {
+                console.error('App.jsx - loadUser failed:', error);
+                dispatch(logout());
+                toast.error('Failed to load user. Please log in again.');
+                navigate('/event-form', { replace: true });
+              });
+            }, 100); // Delay to ensure state update
           } else {
             throw new Error('Invalid localStorage user data');
           }
@@ -129,15 +140,14 @@ const App = () => {
           localStorage.removeItem('eventproUser');
           navigate('/event-form', { replace: true });
         }
-      } else if (location.pathname !== '/event-form') {
-        console.log('App.jsx - No token, redirecting to /event-form');
-        navigate('/event-form', { replace: true });
+      } else {
+        console.log('App.jsx - No token, staying on /event-form');
       }
     }
-  }, [dispatch, navigate, location.pathname]);
+  }, [dispatch, navigate, location.pathname, proAuthenticated, proUser, easeAuthenticated]);
 
   useEffect(() => {
-    console.log('App.jsx - Running handleAuth');
+    console.log('App.jsx - Running handleAuth on mount');
     handleAuth();
   }, [handleAuth]);
 
