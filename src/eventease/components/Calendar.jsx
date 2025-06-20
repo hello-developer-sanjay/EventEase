@@ -128,15 +128,19 @@ const Calendar = () => {
   }
 
   const formatEvents = (events) => {
-    return events.map(event => {
-      const start = event.start || event.date;
-      const end = event.end || event.date;
-      return {
-        ...event,
-        start: start ? new Date(start) : new Date(),
-        end: end ? new Date(end) : new Date(),
-      };
-    }).filter(event => event.start && event.end && !isNaN(event.start.getTime()) && !isNaN(event.end.getTime()));
+    console.log('Formatting events:', events); // Debug events
+    return events
+      .filter(event => event && (event.start || event.date)) // Ensure event has start or date
+      .map(event => {
+        const start = event.start || event.date;
+        const end = event.end || event.date;
+        return {
+          ...event,
+          start: start ? new Date(start) : new Date(),
+          end: end ? new Date(end) : new Date(),
+        };
+      })
+      .filter(event => event.start && event.end && !isNaN(event.start.getTime()) && !isNaN(event.end.getTime()));
   };
 
   const mergedEvents = formatEvents([...events, ...googleCalendarEvents]);
