@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { setAuth as setEventEaseAuth } from './store/slices/eventease/authSlice';
 import { setAuth as setEventProAuth, loadUser as loadEventProUser } from './store/slices/eventpro/authSlice';
 import Layout from './shared/components/Layout';
@@ -28,16 +28,19 @@ const App = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
+  const { isAuthenticated: easeAuthenticated } = useSelector(state => state.eventease.auth);
+  const { isAuthenticated: proAuthenticated } = useSelector(state => state.eventpro.auth);
 
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
     const user = searchParams.get('user');
     const token = searchParams.get('token');
-    const platform = searchParams.get('platform') || 'eventease'; // Default to eventease
+    const platform = searchParams.get('platform') || 'eventease';
 
     console.log('Raw user query:', user);
     console.log('Raw token query:', token);
     console.log('Platform:', platform);
+    console.log('Current path:', location.pathname);
 
     if (user && token) {
       try {
@@ -47,57 +50,65 @@ const App = () => {
         }
         if (platform === 'eventpro') {
           dispatch(setEventProAuth({ user: parsedUser, token }));
-          navigate(parsedUser.role === 'admin' ? '/eventpro/dashboard' : '/eventpro');
+          navigate(parsedUser.role === 'admin' ? '/eventpro/dashboard' : '/eventpro', { replace: true });
         } else {
           dispatch(setEventEaseAuth({ user: parsedUser, token }));
-          navigate(parsedUser.role === 'admin' ? '/admin-dashboard' : '/eventease');
+          navigate(parsedUser.role === 'admin' ? '/admin-dashboard' : '/eventease', { replace: true });
         }
       } catch (error) {
         console.error('Error parsing user from query:', error, 'Raw user:', user);
         toast.error('Invalid user data format');
-        navigate(`/${platform}/login`);
+        navigate(`/${platform}/login`, { replace: true });
       }
-    } else if (localStorage.getItem(`${platform}Token`) && localStorage.getItem('user')) {
-      try {
-        const user = JSON.parse(localStorage.getItem('user') || '{}');
-        if (user._id && user.email) {
-          if (platform === 'eventpro') {
-            dispatch(setEventProAuth({ user, token: localStorage.getItem('eventproToken') }));
-            navigate(user.role === 'admin' ? '/eventpro/dashboard' : '/eventpro');
-          } else {
+    } else if (location.pathname.startsWith('/eventease') && !easeAuthenticated) {
+      if (localStorage.getItem('eventeaseToken') && localStorage.getItem('user')) {
+        try {
+          const user = JSON.parse(localStorage.getItem('user') || '{}');
+          if (user._id && user.email) {
             dispatch(setEventEaseAuth({ user, token: localStorage.getItem('eventeaseToken') }));
-            navigate(user.role === 'admin' ? '/admin-dashboard' : '/eventease');
+            console.log('Restored EventEase auth from localStorage');
+          } else {
+            throw new Error('Invalid localStorage user data');
           }
-        } else {
-          throw new Error('Invalid localStorage user data');
+        } catch (error) {
+          console.error('Error parsing localStorage user:', error);
+          toast.error('Invalid stored user data');
+          navigate('/eventease/login', { replace: true });
         }
-      } catch (error) {
-        console.error('Error parsing localStorage user:', error);
-        toast.error('Invalid stored user data');
-        navigate(`/${platform}/login`);
+      } else {
+        navigate('/eventease/login', { replace: true });
       }
-    } else {
-      navigate('/');
+    } else if (location.pathname.startsWith('/eventpro') && !proAuthenticated) {
+      if (localStorage.getItem('eventproToken') && localStorage.getItem('user')) {
+        try {
+          const user = JSON.parse(localStorage.getItem('user') || '{}');
+          if (user._id && user.email) {
+            dispatch(setEventProAuth({ user, token: localStorage.getItem('eventproToken') }));
+            console.log('Restored EventPro auth from localStorage');
+            dispatch(loadEventProUser()).catch(error => console.error('EventPro loadUser failed:', error));
+          } else {
+            throw new Error('Invalid localStorage user data');
+          }
+        } catch (error) {
+          console.error('Error parsing localStorage user:', error);
+          toast.error('Invalid stored user data');
+          navigate('/eventpro/login', { replace: true });
+        }
+      } else {
+        navigate('/eventpro/login', { replace: true });
+      }
     }
-    if (platform === 'eventpro') {
-      dispatch(loadEventProUser()).catch(error => console.error('EventPro loadUser failed:', error));
-    }
-  }, [dispatch, location.search, navigate]);
+  }, [dispatch, location.search, location.pathname, navigate, easeAuthenticated, proAuthenticated]);
 
   return (
     <ErrorBoundary>
       <Layout>
         <Routes>
-          {/* Home Route */}
           <Route path="/" element={<Home />} />
-
-          {/* EventEase Routes */}
           <Route path="/eventease" element={<Calendar />} />
           <Route path="/eventease/login" element={<Login />} />
           <Route path="/eventease/sync-google-calendar" element={<GoogleCalendarSync />} />
           <Route path="/eventease/create-event" element={<Calendar />} />
-
-          {/* EventPro Routes */}
           <Route path="/eventpro" element={<AddEventPage />} />
           <Route path="/eventpro/add-event" element={<AddEventPage />} />
           <Route path="/eventpro/add-event/:id" element={<AddEventPage />} />
