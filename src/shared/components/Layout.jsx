@@ -175,26 +175,7 @@ const Layout = ({ children }) => {
         borderRadius={borderRadius}
         boxShadow={boxShadow}
       >
-        <Header>
-          <h1>{appName} - Event Management</h1>
-          <NavLinks>
-            {isEventEase ? (
-              <>
-                <NavLink to="/eventease">Calendar</NavLink>
-                <NavLink to="/eventease/create-event">Create Event</NavLink>
-                <NavLink to="/eventease/sync-google-calendar">Sync Google Calendar</NavLink>
-                <NavLink to="/eventease/login">Login</NavLink>
-              </>
-            ) : (
-              <>
-                <NavLink to="/eventpro">Add Event</NavLink>
-                <NavLink to="/eventpro/list-events">List Events</NavLink>
-                <NavLink to="/eventpro/dashboard">Dashboard</NavLink>
-                <NavLink to="/eventpro/register">Register</NavLink>
-              </>
-            )}
-          </NavLinks>
-        </Header>
+       
 
         {children}
       </MainContent>
