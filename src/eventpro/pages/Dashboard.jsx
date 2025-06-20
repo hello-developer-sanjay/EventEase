@@ -51,7 +51,7 @@ const LogoutButton = styled(Button)`
 const Dashboard = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { user, isAuthenticated, loading, error } = useSelector((state) => state.eventpro.auth);
+  const { user, isAuthenticated, error } = useSelector((state) => state.eventpro.auth);
 
   useEffect(() => {
     const token = localStorage.getItem('eventproToken');
