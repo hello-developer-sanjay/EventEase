@@ -70,10 +70,18 @@ const authSlice = createSlice({
     clearError(state) {
       state.error = null;
     },
+    setAuth(state, action) {
+      state.token = action.payload.token;
+      state.user = action.payload.user;
+      state.isAuthenticated = true;
+      state.loading = false;
+      state.error = null;
+      localStorage.setItem('eventproToken', action.payload.token);
+      localStorage.setItem('user', JSON.stringify(action.payload.user));
+    },
   },
   extraReducers: (builder) => {
     builder
-      // Register
       .addCase(register.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -89,7 +97,6 @@ const authSlice = createSlice({
         state.isAuthenticated = false;
         state.error = action.payload;
       })
-      // Login
       .addCase(login.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -105,7 +112,6 @@ const authSlice = createSlice({
         state.isAuthenticated = false;
         state.error = action.payload;
       })
-      // Load User
       .addCase(loadUser.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -123,5 +129,5 @@ const authSlice = createSlice({
   },
 });
 
-export const { clearError } = authSlice.actions;
+export const { clearError, setAuth } = authSlice.actions;
 export default authSlice.reducer;
