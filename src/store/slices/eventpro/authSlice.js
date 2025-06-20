@@ -4,6 +4,19 @@ import { toast } from 'react-toastify';
 import { setAuthToken } from '../../../eventpro/utils/setAuthToken';
 import apiConfig from '../../../shared/utils/apiConfig';
 
+// Validate token format
+const isValidToken = (token) => {
+  if (!token || typeof token !== 'string') return false;
+  try {
+    const decoded = JSON.parse(atob(token.split('.')[1]));
+    const exp = decoded.exp * 1000;
+    return exp > Date.now();
+  } catch (error) {
+    console.error('authSlice.js - Invalid token format:', error);
+    return false;
+  }
+};
+
 // Axios interceptor for 401 handling
 axios.interceptors.response.use(
   (response) => response,
@@ -21,9 +34,9 @@ axios.interceptors.response.use(
 );
 
 const initialState = {
-  token: localStorage.getItem('eventproToken') || null,
+  token: localStorage.getItem('eventproToken') && isValidToken(localStorage.getItem('eventproToken')) ? localStorage.getItem('eventproToken') : null,
   user: JSON.parse(localStorage.getItem('eventproUser')) || null,
-  isAuthenticated: false, // Start false, set true after login
+  isAuthenticated: false,
   loading: false,
   error: null,
 };
@@ -33,6 +46,9 @@ export const register = createAsyncThunk('eventpro/auth/register', async (userDa
     const res = await axios.post(`${apiConfig.eventpro}/auth/register`, { ...userData, platform: 'eventpro' }, {
       headers: { 'Content-Type': 'application/json' },
     });
+    if (!isValidToken(res.data.token)) {
+      throw new Error('Invalid token received');
+    }
     localStorage.setItem('eventproToken', res.data.token);
     localStorage.setItem('eventproUser', JSON.stringify(res.data.user));
     setAuthToken(res.data.token);
@@ -51,6 +67,9 @@ export const login = createAsyncThunk('eventpro/auth/login', async ({ email, pas
     const res = await axios.post(`${apiConfig.eventpro}/auth/login`, { email, password, platform }, {
       headers: { 'Content-Type': 'application/json' },
     });
+    if (!isValidToken(res.data.token)) {
+      throw new Error('Invalid token received');
+    }
     localStorage.setItem('eventproToken', res.data.token);
     localStorage.setItem('eventproUser', JSON.stringify(res.data.user));
     setAuthToken(res.data.token);
@@ -66,9 +85,12 @@ export const login = createAsyncThunk('eventpro/auth/login', async ({ email, pas
 
 export const loadUser = createAsyncThunk('eventpro/auth/loadUser', async (_, { rejectWithValue }) => {
   const token = localStorage.getItem('eventproToken');
-  if (!token) {
-    console.log('authSlice.js - No token found');
-    return rejectWithValue('No token found');
+  if (!token || !isValidToken(token)) {
+    console.log('authSlice.js - No valid token found');
+    localStorage.removeItem('eventproToken');
+    localStorage.removeItem('eventproUser');
+    setAuthToken(null);
+    return rejectWithValue('No valid token found');
   }
   setAuthToken(token);
   try {
@@ -98,6 +120,17 @@ const authSlice = createSlice({
       state.error = null;
     },
     setAuth(state, action) {
+      if (!isValidToken(action.payload.token)) {
+        state.token = null;
+        state.user = null;
+        state.isAuthenticated = false;
+        state.loading = false;
+        state.error = 'Invalid token';
+        localStorage.removeItem('eventproToken');
+        localStorage.removeItem('eventproUser');
+        setAuthToken(null);
+        return;
+      }
       state.token = action.payload.token;
       state.user = action.payload.user;
       state.isAuthenticated = true;
