@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
-import { loadUser as loadEventEaseUser } from './store/slices/eventease/authSlice';
+import { loadUser as loadEventEaseUser, setAuth } from './store/slices/eventease/authSlice';
 import { loadUser as loadEventProUser } from './store/slices/eventpro/authSlice';
 import Layout from './shared/components/Layout';
 import ErrorBoundary from './shared/components/ErrorBoundary';
@@ -35,29 +35,26 @@ const App = () => {
     if (user && token) {
       try {
         const parsedUser = JSON.parse(decodeURIComponent(user));
-        localStorage.setItem('eventeaseToken', token);
-        localStorage.setItem('user', JSON.stringify(parsedUser));
-        dispatch(loadEventEaseUser()).then(() => {
-          navigate(parsedUser.role === 'admin' ? '/admin-dashboard' : '/eventease');
-        }).catch((error) => {
-          console.error('loadUser failed:', error);
-          navigate(parsedUser.role === 'admin' ? '/admin-dashboard' : '/eventease');
-        });
+        // Directly set auth state
+        dispatch(setAuth({ user: parsedUser, token }));
+        navigate(parsedUser.role === 'admin' ? '/admin-dashboard' : '/eventease');
       } catch (error) {
         console.error('Error parsing user from query:', error);
         toast.error('Invalid user data');
         navigate('/eventease/login');
       }
     } else if (localStorage.getItem('eventeaseToken') && localStorage.getItem('user')) {
-      dispatch(loadEventEaseUser()).then(() => {
-        const user = JSON.parse(localStorage.getItem('user') || '{}');
-        navigate(user.role === 'admin' ? '/admin-dashboard' : '/eventease');
-      }).catch(() => {
-        const user = JSON.parse(localStorage.getItem('user') || '{}');
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      dispatch(loadEventEaseUser()).catch(() => {
+        // Fallback to localStorage
+        dispatch(setAuth({ user, token: localStorage.getItem('eventeaseToken') }));
         navigate(user.role === 'admin' ? '/admin-dashboard' : '/eventease');
       });
     } else {
-      dispatch(loadEventEaseUser()).catch(error => console.error('EventEase loadUser failed:', error));
+      dispatch(loadEventEaseUser()).catch(error => {
+        console.error('EventEase loadUser failed:', error);
+        navigate('/eventease/login');
+      });
     }
     dispatch(loadEventProUser()).catch(error => console.error('EventPro loadUser failed:', error));
   }, [dispatch, location.search, navigate]);
