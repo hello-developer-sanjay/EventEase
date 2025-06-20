@@ -23,7 +23,7 @@ export const register = createAsyncThunk('eventpro/auth/register', async (userDa
     toast.success('Registration successful!');
     return res.data;
   } catch (error) {
-    console.error('Error registering user:', error);
+    console.error('authSlice.js - Error registering user:', error);
     toast.error(error.response?.data?.message || 'Registration failed');
     return rejectWithValue(error.response?.data?.message || 'Registration failed');
   }
@@ -40,7 +40,7 @@ export const login = createAsyncThunk('eventpro/auth/login', async ({ email, pas
     toast.success('Login successful!');
     return res.data;
   } catch (error) {
-    console.error('Error logging in:', error);
+    console.error('authSlice.js - Error logging in:', error);
     toast.error(error.response?.data?.message || 'Login failed');
     return rejectWithValue(error.response?.data?.message || 'Login failed');
   }
@@ -49,6 +49,7 @@ export const login = createAsyncThunk('eventpro/auth/login', async ({ email, pas
 export const loadUser = createAsyncThunk('eventpro/auth/loadUser', async (_, { rejectWithValue }) => {
   const token = localStorage.getItem('eventproToken');
   if (!token) {
+    console.log('authSlice.js - No token found');
     return rejectWithValue('No token found');
   }
   setAuthToken(token);
@@ -57,9 +58,10 @@ export const loadUser = createAsyncThunk('eventpro/auth/loadUser', async (_, { r
       headers: { 'x-auth-token': token },
     });
     localStorage.setItem('eventproUser', JSON.stringify(res.data.user));
+    console.log('authSlice.js - loadUser success:', res.data.user);
     return res.data.user;
   } catch (error) {
-    console.error('Error loading user:', error);
+    console.error('authSlice.js - Error loading user:', error);
     localStorage.removeItem('eventproToken');
     localStorage.removeItem('eventproUser');
     setAuthToken(null);
@@ -92,6 +94,7 @@ const authSlice = createSlice({
       localStorage.removeItem('eventproToken');
       localStorage.removeItem('eventproUser');
       setAuthToken(null);
+      console.log('authSlice.js - Logged out');
     },
   },
   extraReducers: (builder) => {
