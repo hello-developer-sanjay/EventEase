@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { useDispatch } from 'react-redux';
+import React, { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { login } from '../../store/slices/eventpro/authSlice';
+import { login, loadUser } from '../../store/slices/eventpro/authSlice';
 import styled, { keyframes } from 'styled-components';
 import { RingLoader } from 'react-spinners';
 import { faGoogle } from '@fortawesome/free-brands-svg-icons';
@@ -115,11 +115,27 @@ const ToggleIcon = styled(FontAwesomeIcon)`
 const SignInSignUp = ({ platform }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { isAuthenticated, loading, error } = useSelector(state => state.eventpro.auth);
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [formLoading, setFormLoading] = useState(false);
 
   const { email, password } = formData;
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate(`/${platform}/dashboard`, { replace: true });
+    } else if (localStorage.getItem('eventproToken')) {
+      dispatch(loadUser());
+    }
+  }, [dispatch, isAuthenticated, navigate, platform]);
+
+  useEffect(() => {
+    if (error) {
+      toast.error(error);
+      dispatch({ type: 'eventpro/auth/clearError' });
+    }
+  }, [error, dispatch]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -131,27 +147,30 @@ const SignInSignUp = ({ platform }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    if (!email || !password) {
+      toast.error('Please fill in all fields');
+      return;
+    }
+    setFormLoading(true);
     try {
       const response = await dispatch(login({ email, password, platform })).unwrap();
-      setLoading(false);
-      toast.success('Login successful');
+      setFormLoading(false);
       localStorage.setItem('eventproToken', response.token);
       localStorage.setItem('eventproUser', JSON.stringify(response.user));
-      if (response.user.role === 'admin') {
-        navigate(`/${platform}/admin-dashboard`);
-      } else {
-        navigate(`/${platform}/dashboard`);
-      }
-    } catch (error) {
-      setLoading(false);
-      toast.error(error || 'Invalid email or password');
+      navigate(response.user.role === 'admin' ? `/${platform}/admin-dashboard` : `/${platform}/dashboard`, { replace: true });
+    } catch (err) {
+      setFormLoading(false);
+      toast.error(err || 'Invalid email or password');
     }
   };
 
   const handleGoogleLogin = () => {
     window.location.href = `https://eventmanager-api-19july.onrender.com/api/auth/google?platform=${platform}`;
   };
+
+  if (loading) {
+    return <RingLoader color="#d4af37" loading={loading} size={60} />;
+  }
 
   return (
     <Container>
@@ -182,8 +201,8 @@ const SignInSignUp = ({ platform }) => {
             aria-label={showPassword ? 'Hide password' : 'Show password'}
           />
         </PasswordContainer>
-        <Button type="submit" aria-label="Login Button">
-          {loading ? <RingLoader color="#000000" loading={loading} size={20} /> : 'Login'}
+        <Button type="submit" aria-label="Login Button" disabled={formLoading}>
+          {formLoading ? <RingLoader color="#000000" loading={formLoading} size={20} /> : 'Login'}
         </Button>
         <GoogleButton onClick={handleGoogleLogin} aria-label="Login with Google">
           <GoogleIcon icon={faGoogle} />
