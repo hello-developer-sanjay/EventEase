@@ -6,9 +6,8 @@ const useAuth = () => {
     user: authState.user || null,
     token: authState.token || null,
     isAuthenticated: authState.isAuthenticated || false,
-    loading: authState.isAuthenticated ? false : authState.loading || false,
+    loading: authState.loading || false,
     error: authState.error || null,
   };
 };
-
 export default useAuth;
