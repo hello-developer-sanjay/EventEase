@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { addEvent, updateEvent } from '../../store/slices/eventpro/eventSlice';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import PropTypes from 'prop-types';
 import styled from 'styled-components';
 import { toast } from 'react-toastify';
+import { logout } from '../../store/slices/eventpro/authSlice';
+import { useNavigate } from 'react-router-dom';
 
 const FormContainer = styled.div`
   max-width: 600px;
@@ -123,8 +125,13 @@ const EventForm = ({ eventToEdit, clearEdit }) => {
   });
   const [errors, setErrors] = useState({});
   const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { isAuthenticated } = useSelector(state => state.eventpro.auth);
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      navigate('/event-form', { replace: true });
+    }
     if (eventToEdit) {
       setEvent({
         eventName: eventToEdit.eventName || '',
@@ -137,7 +144,7 @@ const EventForm = ({ eventToEdit, clearEdit }) => {
         totalSubEvents: eventToEdit.totalSubEvents || 0,
       });
     }
-  }, [eventToEdit]);
+  }, [eventToEdit, isAuthenticated, navigate]);
 
   const validateForm = () => {
     const newErrors = {};
@@ -185,9 +192,14 @@ const EventForm = ({ eventToEdit, clearEdit }) => {
           organisation: '',
           totalSubEvents: 0,
         });
+        navigate('/eventpro/list-events', { replace: true });
       }
     } catch (error) {
-      toast.error('Failed to save event');
+      if (error === 'User is not authenticated') {
+        dispatch(logout());
+        navigate('/event-form', { replace: true });
+      }
+      toast.error(error || 'Failed to save event');
     }
   };
 
