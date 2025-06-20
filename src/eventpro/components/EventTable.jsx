@@ -6,6 +6,8 @@ import { useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
 import styled from 'styled-components';
 import { format } from 'date-fns';
+import { toast } from 'react-toastify';
+import { logout } from '../../store/slices/eventpro/authSlice';
 
 const TableContainer = styled.div`
   max-width: 1200px;
@@ -47,19 +49,35 @@ const DeleteButton = styled(ActionButton)`
 
 const EventTable = () => {
   const events = useSelector((state) => state.eventpro.events.events);
+  const { isAuthenticated } = useSelector((state) => state.eventpro.auth);
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
   useEffect(() => {
-    dispatch(fetchEvents());
-  }, [dispatch]);
+    if (!isAuthenticated) {
+      navigate('/event-form', { replace: true });
+    } else {
+      dispatch(fetchEvents()).catch((error) => {
+        if (error === 'User is not authenticated') {
+          dispatch(logout());
+          navigate('/event-form', { replace: true });
+        }
+      });
+    }
+  }, [dispatch, isAuthenticated, navigate]);
 
   const handleDelete = async (eventId) => {
     try {
       await dispatch(deleteEvent(eventId)).unwrap();
+      toast.success('Event deleted successfully');
       dispatch(fetchEvents());
     } catch (error) {
-      console.error('Error deleting event:', error);
+      if (error === 'User is not authenticated') {
+        dispatch(logout());
+        navigate('/event-form', { replace: true });
+      } else {
+        toast.error('Error deleting event');
+      }
     }
   };
 
