@@ -124,7 +124,7 @@ const SignInSignUp = ({ platform }) => {
 
   useEffect(() => {
     console.log('SignInSignUp.jsx - Checking auth:', { isAuthenticated, user, platform, loading });
-    if (isAuthenticated && user && !loading) {
+    if (!loading && isAuthenticated && user) {
       console.log('SignInSignUp.jsx - Authenticated, navigating to dashboard');
       navigate(user.role === 'admin' ? `/${platform}/admin-dashboard` : `/${platform}/dashboard`, { replace: true });
     }
@@ -162,6 +162,7 @@ const SignInSignUp = ({ platform }) => {
     setFormLoading(true);
     try {
       await dispatch(login({ email, password, platform })).unwrap();
+      setFormLoading(false);
     } catch (err) {
       console.error('SignInSignUp.jsx - Login error:', err);
       toast.error(err || 'Invalid email or password');
