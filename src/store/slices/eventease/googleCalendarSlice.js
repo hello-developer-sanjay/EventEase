@@ -25,6 +25,7 @@ export const syncGoogleCalendar = createAsyncThunk('eventease/googleCalendar/syn
     return res.data;
   } catch (error) {
     const message = error.response?.data?.message || 'Failed to sync Google Calendar';
+    console.error('syncGoogleCalendar error:', error, 'Response:', error.response);
     toast.error(message);
     return rejectWithValue(message);
   }
@@ -41,7 +42,7 @@ const googleCalendarSlice = createSlice({
         state.error = null;
       })
       .addCase(syncGoogleCalendar.fulfilled, (state, action) => {
-        state.events = action.payload.events || [];
+        state.events = action.payload.events?.filter(event => event.start && event.end) || [];
         state.syncStatus = action.payload.status;
         state.accessToken = action.payload.accessToken;
         state.refreshToken = action.payload.refreshToken;
