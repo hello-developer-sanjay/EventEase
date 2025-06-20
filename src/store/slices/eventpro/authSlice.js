@@ -8,7 +8,7 @@ const initialState = {
   token: localStorage.getItem('eventproToken') || null,
   user: JSON.parse(localStorage.getItem('eventproUser')) || null,
   isAuthenticated: false,
-  loading: false, // Changed to false initially
+  loading: false,
   error: null,
 };
 
