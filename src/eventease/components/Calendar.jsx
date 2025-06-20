@@ -38,7 +38,7 @@ const Calendar = () => {
   const events = useSelector(state => state.eventease?.events?.events || []);
   const googleCalendarEvents = useSelector(state => state.eventease?.googleCalendar?.events || []);
   const eventError = useSelector(state => state.eventease?.events?.error);
-  const [selectedEvent, setSelectedEvent ] = useState(null);
+  const [selectedEvent, setSelectedEvent] = useState(null);
   const [showEventForm, setShowEventForm] = useState(false);
 
   useEffect(() => {
@@ -85,78 +85,92 @@ const Calendar = () => {
       }
     } catch (error) {
       toast.error(error.message || 'Failed to create event');
-      }
-    };
+    }
+  };
 
   const handleUpdateEvent = async (eventData) => {
-      try {
-        const action = await dispatch(updateEvent({ id: selectedEvent._id, eventData }));
-        if (updateEvent.fulfilled.match(action)) {
-          toast.success('Event updated successfully');
-          setShowEventForm(false);
-        } else {
-          toast.error(action.payload || 'Failed to update event');
-        }
-      } catch (error) {
-        toast.error(error.message || 'Failed to update event');
+    try {
+      const action = await dispatch(updateEvent({ id: selectedEvent._id, eventData }));
+      if (updateEvent.fulfilled.match(action)) {
+        toast.success('Event updated successfully');
+        setShowEventForm(false);
+      } else {
+        toast.error(action.payload || 'Failed to update event');
       }
-      };
+    } catch (error) {
+      toast.error(error.message || 'Failed to update event');
+    }
+  };
 
-      if (loading) {
-        return <LoginPrompt />;
+  const handleDeleteEvent = async () => {
+    try {
+      const action = await dispatch(deleteEvent(selectedEvent._id));
+      if (deleteEvent.fulfilled.match(action)) {
+        toast.success('Event deleted successfully');
+        setShowEventForm(false);
+      } else {
+        toast.error(action.payload || 'Failed to delete event');
       }
+    } catch (error) {
+      toast.error(error.message || 'Failed to delete event');
+    }
+  };
 
-      if (!isAuthenticated || !user?.user_id) {
-        return <LoginPrompt />;
-      }
+  if (loading) {
+    return <LoginPrompt />;
+  }
 
-      if (authError || eventError) {
-        return <ErrorMessage>Error: {authError || eventError}</ErrorMessage>;
-      }
+  if (!isAuthenticated || !user?._id) {
+    return <LoginPrompt />;
+  }
 
-      const formatEvents = (events) => {
-        console.log('Formatting events:', events);
-        return events
-          .filter(event => event && (typeof event === 'object' && (event.start || event.date))) // Ensure valid objects
-          .map(event => {
-            const start = event.start || event.date;
-            const end = event?.end || event.date;
-            return {
-              ...event,
-              start: start ? new Date(start) : new Date(),
-              end: end ? new Date(end) : new Date(start),
-            };
-          })
-          .filter(event => event.start && event.end && !isNaN(event.start.getTime()) && !isNaN(event.end.getTime()));
-      };
+  if (authError || eventError) {
+    return <ErrorMessage>Error: {authError || eventError}</ErrorMessage>;
+  }
 
-      const mergedEvents = formatEvents([...events, ...googleCalendarEvents]);
+  const formatEvents = (events) => {
+    console.log('Formatting events:', events);
+    return events
+      .filter(event => event && typeof event === 'object' && (event.start || event.date) && event._id)
+      .map(event => {
+        const start = event.start || event.date;
+        const end = event.end || event.date;
+        return {
+          ...event,
+          start: start ? new Date(start) : new Date(),
+          end: end ? new Date(end) : new Date(start),
+        };
+      })
+      .filter(event => event.start && event.end && !isNaN(event.start.getTime()) && !isNaN(event.end.getTime()));
+  };
 
-      return (
-        <Container>
-          <Title>My Calendar</Title>
-          <BigCalendar
-            localizer={momentLocalizer(moment)}
-            events={mergedEvents}
-            startAccessor="start"
-            endAccessor="end"
-            style={{ height: 500 }}
-            selectable
-            onSelectSlot={handleSelectSlot}
-            onSelectEvent={handleSelectEvent}
-          />
-          {showEventForm && selectedEvent && (
-            <EventForm
-              event={selectedEvent}
-              onClose={() => setShowEventForm(false)}
-              onCreate={handleCreateEvent}
-              onUpdate={handleUpdateEvent}
-              onDelete={handleDeleteEvent}
-            />
-          )}
-          <GoogleCalendarSync />
-        </Container>
-      );
-    };
+  const mergedEvents = formatEvents([...events, ...googleCalendarEvents]);
 
-    export default Calendar;
+  return (
+    <Container>
+      <Title>My Calendar</Title>
+      <BigCalendar
+        localizer={momentLocalizer(moment)}
+        events={mergedEvents}
+        startAccessor="start"
+        endAccessor="end"
+        style={{ height: 500 }}
+        selectable
+        onSelectSlot={handleSelectSlot}
+        onSelectEvent={handleSelectEvent}
+      />
+      {showEventForm && selectedEvent && (
+        <EventForm
+          event={selectedEvent}
+          onClose={() => setShowEventForm(false)}
+          onCreate={handleCreateEvent}
+          onUpdate={handleUpdateEvent}
+          onDelete={handleDeleteEvent}
+        />
+      )}
+      <GoogleCalendarSync />
+    </Container>
+  );
+};
+
+export default Calendar;
