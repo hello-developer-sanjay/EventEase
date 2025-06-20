@@ -29,7 +29,7 @@ const App = () => {
   const { isAuthenticated: easeAuthenticated } = useSelector((state) => state.eventease.auth);
   const { isAuthenticated: proAuthenticated, user: proUser } = useSelector((state) => state.eventpro.auth);
 
-  // Restore auth state for both platforms
+  // Sync auth state for both platforms
   ['eventpro', 'eventease'].forEach((platform) => {
     const token = localStorage.getItem(`${platform}Token`);
     const userData = localStorage.getItem(`${platform}User`);
