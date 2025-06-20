@@ -30,8 +30,6 @@ const App = () => {
   const location = useLocation();
   const { isAuthenticated: easeAuthenticated } = useSelector(state => state.eventease.auth);
   const { isAuthenticated: proAuthenticated, user: proUser } = useSelector(state => state.eventpro.auth);
-  const eventeaseState = useSelector(state => state.eventease);
-  const eventproState = useSelector(state => state.eventpro);
 
   const handleAuth = useCallback(() => {
     const searchParams = new URLSearchParams(location.search);
@@ -41,7 +39,7 @@ const App = () => {
     console.log('Raw user query:', user);
     console.log('Platform:', platform);
     console.log('Current path:', location.pathname);
-    console.log('Redux state in App:', JSON.stringify({ eventease: eventeaseState, eventpro: eventproState }));
+    console.log('Redux state:', { easeAuthenticated, proAuthenticated, proUser });
 
     if (user) {
       try {
@@ -56,7 +54,8 @@ const App = () => {
           dispatch(setEventProAuth({ user: parsedUser, token }));
           dispatch(loadEventProUser()).then(() => {
             navigate(parsedUser.role === 'admin' ? '/eventpro/admin-dashboard' : '/eventpro/dashboard', { replace: true });
-          }).catch(() => {
+          }).catch((error) => {
+            console.error('loadUser failed:', error);
             dispatch(logout());
             navigate('/event-form', { replace: true });
           });
@@ -66,7 +65,6 @@ const App = () => {
           dispatch(setEventEaseAuth({ user: parsedUser, token }));
           navigate(parsedUser.role === 'admin' ? '/admin-dashboard' : '/eventease', { replace: true });
         }
-        navigate(location.pathname, { replace: true }); // Clear query params
       } catch (error) {
         console.error('Error parsing user from query:', error, 'Raw user:', user);
         toast.error('Invalid user data format');
@@ -103,7 +101,8 @@ const App = () => {
             dispatch(setEventProAuth({ user, token }));
             dispatch(loadEventProUser()).then(() => {
               navigate(user.role === 'admin' ? '/eventpro/admin-dashboard' : '/eventpro/dashboard', { replace: true });
-            }).catch(() => {
+            }).catch((error) => {
+              console.error('loadUser failed:', error);
               dispatch(logout());
               navigate('/event-form', { replace: true });
             });
@@ -118,13 +117,11 @@ const App = () => {
           localStorage.removeItem('eventproUser');
           navigate('/event-form', { replace: true });
         }
-      } else {
-        if (location.pathname !== '/event-form') {
-          navigate('/event-form', { replace: true });
-        }
+      } else if (location.pathname !== '/event-form') {
+        navigate('/event-form', { replace: true });
       }
     }
-  }, [dispatch, location.pathname, location.search, navigate, easeAuthenticated, proAuthenticated, eventeaseState, eventproState]);
+  }, [dispatch, location.pathname, location.search, navigate, easeAuthenticated, proAuthenticated, proUser]);
 
   useEffect(() => {
     handleAuth();
