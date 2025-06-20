@@ -54,7 +54,7 @@ const App = () => {
     }
   });
 
-  console.log('App.jsx - Rendering:', { easeAuthenticated, proAuthenticated, proUser });
+  console.log('App.jsx - Rendering:', { easeAuthenticated, proAuthenticated, proUser, path: window.location.pathname });
 
   return (
     <ErrorBoundary>
