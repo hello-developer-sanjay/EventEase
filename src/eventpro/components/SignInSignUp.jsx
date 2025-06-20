@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { login, loadUser, logout } from '../../store/slices/eventpro/authSlice';
+import { login, clearError } from '../../store/slices/eventpro/authSlice';
 import styled, { keyframes } from 'styled-components';
 import { RingLoader } from 'react-spinners';
 import { faGoogle } from '@fortawesome/free-brands-svg-icons';
@@ -115,7 +115,7 @@ const ToggleIcon = styled(FontAwesomeIcon)`
 const SignInSignUp = ({ platform }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { isAuthenticated, error } = useSelector(state => state.eventpro.auth);
+  const { isAuthenticated, error } = useSelector((state) => state.eventpro.auth);
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [formLoading, setFormLoading] = useState(false);
@@ -125,15 +125,10 @@ const SignInSignUp = ({ platform }) => {
   useEffect(() => {
     console.log('SignInSignUp.jsx - Checking auth:', { isAuthenticated, platform });
     if (isAuthenticated) {
+      console.log('SignInSignUp.jsx - Authenticated, navigating to dashboard');
       navigate(`/${platform}/dashboard`, { replace: true });
-    } else if (localStorage.getItem('eventproToken')) {
-      dispatch(loadUser()).catch((err) => {
-        console.error('SignInSignUp.jsx - loadUser failed:', err);
-        dispatch(logout());
-        navigate('/event-form', { replace: true });
-      });
     }
-  }, [dispatch, isAuthenticated, navigate, platform]);
+  }, [isAuthenticated, navigate, platform]);
 
   useEffect(() => {
     if (error) {
@@ -167,13 +162,11 @@ const SignInSignUp = ({ platform }) => {
     try {
       const response = await dispatch(login({ email, password, platform })).unwrap();
       setFormLoading(false);
-      localStorage.setItem('eventproToken', response.token);
-      localStorage.setItem('eventproUser', JSON.stringify(response.user));
-      console.log('SignInSignUp.jsx - Login success, navigating to dashboard');
+      console.log('SignInSignUp.jsx - Login success:', { user: response.user._id, email: response.user.email });
       navigate(response.user.role === 'admin' ? `/${platform}/admin-dashboard` : `/${platform}/dashboard`, { replace: true });
     } catch (err) {
       setFormLoading(false);
-      console.error('SignInSignUp.jsx - Login failed:', err);
+      console.error('SignInSignUp.jsx - Login error:', err);
       toast.error(err || 'Invalid email or password');
     }
   };
