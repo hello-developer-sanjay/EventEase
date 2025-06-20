@@ -7,7 +7,7 @@ import apiConfig from '../../../shared/utils/apiConfig';
 const initialState = {
   token: localStorage.getItem('eventproToken') || null,
   user: JSON.parse(localStorage.getItem('eventproUser')) || null,
-  isAuthenticated: false,
+  isAuthenticated: !!localStorage.getItem('eventproToken'),
   loading: false,
   error: null,
 };
@@ -20,11 +20,11 @@ export const register = createAsyncThunk('eventpro/auth/register', async (userDa
     localStorage.setItem('eventproToken', res.data.token);
     localStorage.setItem('eventproUser', JSON.stringify(res.data.user));
     setAuthToken(res.data.token);
-    console.log('authSlice.js - Register success:', { user: res.data.user, token: res.data.token });
+    console.log('authSlice.js - Register success:', { user: res.data.user._id, email: res.data.user.email });
     toast.success('Registration successful!');
     return res.data;
   } catch (error) {
-    console.error('authSlice.js - Error registering user:', error);
+    console.error('authSlice.js - Register error:', error.message);
     toast.error(error.response?.data?.message || 'Registration failed');
     return rejectWithValue(error.response?.data?.message || 'Registration failed');
   }
@@ -38,11 +38,11 @@ export const login = createAsyncThunk('eventpro/auth/login', async ({ email, pas
     localStorage.setItem('eventproToken', res.data.token);
     localStorage.setItem('eventproUser', JSON.stringify(res.data.user));
     setAuthToken(res.data.token);
-    console.log('authSlice.js - Login success:', { user: res.data.user, token: res.data.token });
+    console.log('authSlice.js - Login success:', { user: res.data.user._id, email: res.data.user.email });
     toast.success('Login successful!');
     return res.data;
   } catch (error) {
-    console.error('authSlice.js - Error logging in:', error);
+    console.error('authSlice.js - Login error:', error.message);
     toast.error(error.response?.data?.message || 'Login failed');
     return rejectWithValue(error.response?.data?.message || 'Login failed');
   }
@@ -63,14 +63,13 @@ export const loadUser = createAsyncThunk('eventpro/auth/loadUser', async (_, { r
       throw new Error('Invalid platform in user data');
     }
     localStorage.setItem('eventproUser', JSON.stringify(res.data.user));
-    console.log('authSlice.js - loadUser success:', res.data.user);
+    console.log('authSlice.js - loadUser success:', { user: res.data.user._id, email: res.data.user.email });
     return res.data.user;
   } catch (error) {
-    console.error('authSlice.js - Error loading user:', error);
+    console.error('authSlice.js - loadUser error:', error.message);
     localStorage.removeItem('eventproToken');
     localStorage.removeItem('eventproUser');
     setAuthToken(null);
-    console.log('authSlice.js - Cleared storage due to loadUser failure');
     return rejectWithValue(error.response?.data?.message || 'Failed to load user');
   }
 });
@@ -90,7 +89,7 @@ const authSlice = createSlice({
       state.error = null;
       localStorage.setItem('eventproToken', action.payload.token);
       localStorage.setItem('eventproUser', JSON.stringify(action.payload.user));
-      console.log('authSlice.js - setAuth:', { user: action.payload.user, token: action.payload.token });
+      console.log('authSlice.js - setAuth:', { user: action.payload.user._id, email: action.payload.user.email });
     },
     logout(state) {
       state.token = null;
@@ -144,7 +143,6 @@ const authSlice = createSlice({
         state.user = action.payload;
         state.isAuthenticated = true;
         state.loading = false;
-        console.log('authSlice.js - loadUser fulfilled:', action.payload);
       })
       .addCase(loadUser.rejected, (state, action) => {
         state.token = null;
@@ -152,7 +150,6 @@ const authSlice = createSlice({
         state.isAuthenticated = false;
         state.loading = false;
         state.error = action.payload;
-        console.log('authSlice.js - loadUser rejected:', action.payload);
       });
   },
 });
