@@ -115,7 +115,7 @@ const ToggleIcon = styled(FontAwesomeIcon)`
 const SignInSignUp = ({ platform }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { isAuthenticated, error } = useSelector((state) => state.eventpro.auth);
+  const { isAuthenticated, error, user, loading } = useSelector((state) => state.eventpro.auth);
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [formLoading, setFormLoading] = useState(false);
@@ -123,18 +123,19 @@ const SignInSignUp = ({ platform }) => {
   const { email, password } = formData;
 
   useEffect(() => {
-    console.log('SignInSignUp.jsx - Checking auth:', { isAuthenticated, platform });
-    if (isAuthenticated) {
+    console.log('SignInSignUp.jsx - Checking auth:', { isAuthenticated, user, platform, loading });
+    if (isAuthenticated && user && !loading) {
       console.log('SignInSignUp.jsx - Authenticated, navigating to dashboard');
-      navigate(`/${platform}/dashboard`, { replace: true });
+      navigate(user.role === 'admin' ? `/${platform}/admin-dashboard` : `/${platform}/dashboard`, { replace: true });
     }
-  }, [isAuthenticated, navigate, platform]);
+  }, [isAuthenticated, user, loading, navigate, platform]);
 
   useEffect(() => {
     if (error) {
       console.log('SignInSignUp.jsx - Error:', error);
       toast.error(error);
       dispatch(clearError());
+      setFormLoading(false);
     }
   }, [error, dispatch]);
 
@@ -160,14 +161,11 @@ const SignInSignUp = ({ platform }) => {
     }
     setFormLoading(true);
     try {
-      const response = await dispatch(login({ email, password, platform })).unwrap();
-      setFormLoading(false);
-      console.log('SignInSignUp.jsx - Login success:', { user: response.user._id, email: response.user.email });
-      navigate(response.user.role === 'admin' ? `/${platform}/admin-dashboard` : `/${platform}/dashboard`, { replace: true });
+      await dispatch(login({ email, password, platform })).unwrap();
     } catch (err) {
-      setFormLoading(false);
       console.error('SignInSignUp.jsx - Login error:', err);
       toast.error(err || 'Invalid email or password');
+      setFormLoading(false);
     }
   };
 
@@ -179,7 +177,7 @@ const SignInSignUp = ({ platform }) => {
   return (
     <Container>
       <LoginForm onSubmit={handleSubmit}>
-        <Title aria-label={`${platform} Title`}>{platform === 'eventpro' ? 'EventPro' : 'EventEase'}</Title>
+        <Title aria-label="EventPro Title">EventPro</Title>
         <Input
           type="email"
           placeholder="Email"
