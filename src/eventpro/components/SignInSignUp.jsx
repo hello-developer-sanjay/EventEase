@@ -5,6 +5,7 @@ import { login } from '../../store/slices/eventpro/authSlice';
 import styled, { keyframes } from 'styled-components';
 import { RingLoader } from 'react-spinners';
 import { faGoogle } from '@fortawesome/free-brands-svg-icons';
+import PropTypes from 'prop-types';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
