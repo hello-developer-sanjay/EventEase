@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { setAuth as setEventEaseAuth } from './store/slices/eventease/authSlice';
 import { setAuth as setEventProAuth, loadUser as loadEventProUser } from './store/slices/eventpro/authSlice';
@@ -30,6 +30,9 @@ const App = () => {
   const location = useLocation();
   const { isAuthenticated: easeAuthenticated } = useSelector(state => state.eventease.auth);
   const { isAuthenticated: proAuthenticated } = useSelector(state => state.eventpro.auth);
+  // Move useSelector to top level for Redux state logging
+  const eventeaseState = useSelector(state => state.eventease);
+  const eventproState = useSelector(state => state.eventpro);
 
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
@@ -39,6 +42,8 @@ const App = () => {
     console.log('Raw user query:', user);
     console.log('Platform:', platform);
     console.log('Current path:', location.pathname);
+    // Log Redux state using top-level selectors
+    console.log('Redux state in App:', JSON.stringify({ eventease: eventeaseState, eventpro: eventproState }));
 
     if (user) {
       try {
@@ -103,13 +108,12 @@ const App = () => {
           toast.error('Invalid stored user data');
           localStorage.removeItem('eventproToken');
           localStorage.removeItem('eventproUser');
-          navigate('/event-form', { replace: { state: false } });
+          navigate('/event-form', { replace: true });
         }
       } else {
-        navigate('/event-form');
+        navigate('/event-form', { replace: true });
       }
     }
-    console.log('Redux state in App:', JSON.stringify({ eventease: useSelector(state => state.eventease), eventpro: useSelector(state => state.eventpro) }));
   }, [dispatch, location.pathname, navigate, easeAuthenticated, proAuthenticated]);
 
   return (
@@ -121,55 +125,53 @@ const App = () => {
           <Route path="/eventease" element={<Calendar />} />
           <Route path="/eventease/login" element={<Login />} />
           <Route path="/eventease/sync-google-calendar" element={<GoogleCalendarSync />} />
-          <Route path="/eventease/create-event" element={<Calendar />}
-          />
+          <Route path="/eventease/create-event" element={<Calendar />} />
+          {/* EventPro Routes */}
           <Route
             path="/eventpro"
+            element={proAuthenticated ? <ListEventsPage /> : <Navigate to="/event-form" replace />}
+          />
+          <Route
+            path="/eventpro/add-event"
+            element={proAuthenticated ? <AddEventPage /> : <Navigate to="/event-form" replace />}
+          />
+          <Route
+            path="/eventpro/add-event/:id"
+            element={proAuthenticated ? <AddEventPage /> : <Navigate to="/event-form" replace />}
+          />
+          <Route path="/eventpro/register" element={<Register />} />
+          <Route path="/eventpro/forgot-password" element={<ForgotPassword />} />
+          <Route path="/eventpro/reset-password/:token" element={<ResetPassword />} />
+          <Route
+            path="/eventpro/dashboard"
+            element={proAuthenticated ? <Dashboard /> : <Navigate to="/event-form" replace />}
+          />
+          <Route path="/event-form" element={<SignInSignUp platform="eventpro" />} />
+          <Route
+            path="/eventpro/list-events"
+            element={proAuthenticated ? <ListEventsPage /> : <Navigate to="/event-form" replace />}
+          />
+          <Route
+            path="/eventpro/admin-dashboard"
             element={
-                proAuthenticated ? <ListEventsPage /> : <Navigate to="/event-form" replace />
-              }
-            />
-            <Route
-              path="/eventpro/add-event"
-              element={proAuthenticated ? <AddEventPage /> : <Navigate to="/event-form" replace />}
-            />
-            <Route
-              path="/eventpro/add-event/:id"
-              element={proAuthenticated ? <AddEventPage /> : <Navigate to="/event-form" replace />}
-            />
-            <Route path="/eventpro/register" element={<Register />} />
-            <Route path="/eventpro/forgot-password" element={<ForgotPassword />} />
-            <Route path="/eventpro/reset-password/:token" element={<ResetPassword />} />
-            <Route
-              path="/eventpro/dashboard"
-              element={proAuthenticated ? <Dashboard /> : <Navigate to="/event-form" replace />}
-            />
-            <Route path="/event-form" element={<SignInSignIn platform="eventpro" />}
-            />
-            <Route
-              path="/eventpro/list-events"
-              element={proAuthenticated ? <ListEventsPage /> : <Navigate to="/event-form" replace />}
-            />
-            <Route
-              path="/eventpro/admin-dashboard"
-              element={
-                proAuthenticated && useSelector(state => state.eventpro.auth.user?.role) === 'admin' ? (
-                  <Dashboard />
-                ) : (
-                  <Navigate to="/event-form" replace />
-                )}
-            />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </Layout>
-      </ErrorBoundary>
-    );
-  };
-
-  const AppWrapper = () => (
-    <Router>
-      <App />
-    </Router>
+              proAuthenticated && useSelector(state => state.eventpro.auth.user?.role) === 'admin' ? (
+                <Dashboard />
+              ) : (
+                <Navigate to="/event-form" replace />
+              )
+            }
+          />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Layout>
+    </ErrorBoundary>
   );
+};
 
-  export default AppWrapper;
+const AppWrapper = () => (
+  <Router>
+    <App />
+  </Router>
+);
+
+export default AppWrapper;
