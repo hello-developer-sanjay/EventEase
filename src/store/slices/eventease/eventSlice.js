@@ -37,7 +37,7 @@ export const createEvent = createAsyncThunk('eventease/events/createEvent', asyn
       end: new Date(eventData.end).toISOString(),
     };
     console.log('Creating event with data:', data, 'Token:', token);
-    const res = await axios.post(`${apiConfig.eventease}/events`, data, {
+    const res = await axios.post(`${apiConfig.eventease}/events/create`, data, {
       headers: { 'x-auth-token': token, 'Content-Type': 'application/json' },
     });
     console.log('Create event response:', res.data);
@@ -54,8 +54,8 @@ export const createEvent = createAsyncThunk('eventease/events/createEvent', asyn
       ...eventData,
       _id: `local-${Date.now()}`,
       userId: user?._id,
-      start: new Date(eventData.start).toISOString(),
-      end: new Date(eventData.end).toISOString(),
+      start: eventData.start ? new Date(eventData.start).toISOString() : new Date().toISOString(),
+      end: eventData.end ? new Date(eventData.end).toISOString() : new Date().toISOString(),
     };
     localEvents.push(newEvent);
     localStorage.setItem('eventeaseEvents', JSON.stringify(localEvents));
