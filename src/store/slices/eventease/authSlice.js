@@ -35,6 +35,9 @@ export const loadUser = createAsyncThunk('eventease/auth/loadUser', async (_, { 
   if (token) {
     setAuthToken(token);
   }
+  if (user && token) {
+    return user; // Trust localStorage if available
+  }
   try {
     const res = await axios.get(`${apiConfig.eventease}/auth/user`, {
       headers: { 'x-auth-token': token },
@@ -43,9 +46,6 @@ export const loadUser = createAsyncThunk('eventease/auth/loadUser', async (_, { 
     return res.data.user;
   } catch (error) {
     console.error('Error loading user:', error);
-    if (user && token) {
-      return user; // Fallback to localStorage user
-    }
     localStorage.removeItem('eventeaseToken');
     localStorage.removeItem('user');
     return rejectWithValue(error.response?.data?.message || 'Failed to load user');
@@ -91,14 +91,9 @@ const authSlice = createSlice({
       .addCase(loadUser.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
-        if (localStorage.getItem('eventeaseToken') && localStorage.getItem('user')) {
-          state.isAuthenticated = true;
-          state.user = JSON.parse(localStorage.getItem('user'));
-        } else {
-          state.isAuthenticated = false;
-          state.user = null;
-          state.token = null;
-        }
+        state.isAuthenticated = false;
+        state.user = null;
+        state.token = null;
       });
   },
 });
