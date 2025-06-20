@@ -12,22 +12,6 @@ const initialState = {
   error: null,
 };
 
-// Global axios interceptor for 401 errors
-axios.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response && error.response.status === 401) {
-      console.error('authSlice.js - 401 Unauthorized, logging out');
-      localStorage.removeItem('eventproToken');
-      localStorage.removeItem('eventproUser');
-      setAuthToken(null);
-      toast.error('Session expired. Please log in again.');
-      window.location.href = '/event-form';
-    }
-    return Promise.reject(error);
-  }
-);
-
 export const register = createAsyncThunk('eventpro/auth/register', async (userData, { rejectWithValue }) => {
   try {
     const res = await axios.post(`${apiConfig.eventpro}/auth/register`, { ...userData, platform: 'eventpro' }, {
@@ -36,6 +20,7 @@ export const register = createAsyncThunk('eventpro/auth/register', async (userDa
     localStorage.setItem('eventproToken', res.data.token);
     localStorage.setItem('eventproUser', JSON.stringify(res.data.user));
     setAuthToken(res.data.token);
+    console.log('authSlice.js - Register success:', { user: res.data.user, token: res.data.token });
     toast.success('Registration successful!');
     return res.data;
   } catch (error) {
@@ -85,6 +70,7 @@ export const loadUser = createAsyncThunk('eventpro/auth/loadUser', async (_, { r
     localStorage.removeItem('eventproToken');
     localStorage.removeItem('eventproUser');
     setAuthToken(null);
+    console.log('authSlice.js - Cleared storage due to loadUser failure');
     return rejectWithValue(error.response?.data?.message || 'Failed to load user');
   }
 });
@@ -158,6 +144,7 @@ const authSlice = createSlice({
         state.user = action.payload;
         state.isAuthenticated = true;
         state.loading = false;
+        console.log('authSlice.js - loadUser fulfilled:', action.payload);
       })
       .addCase(loadUser.rejected, (state, action) => {
         state.token = null;
@@ -165,6 +152,7 @@ const authSlice = createSlice({
         state.isAuthenticated = false;
         state.loading = false;
         state.error = action.payload;
+        console.log('authSlice.js - loadUser rejected:', action.payload);
       });
   },
 });
