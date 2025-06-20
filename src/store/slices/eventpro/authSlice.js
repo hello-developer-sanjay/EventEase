@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 import { toast } from 'react-toastify';
-import { setAuthToken } from '../../../eventpro/utils/setAuthToken';
+import { setAuthToken } from '../../../shared/utils/setAuthToken';
 import apiConfig from '../../../shared/utils/apiConfig';
 
 const initialState = {
@@ -14,7 +14,7 @@ const initialState = {
 
 export const register = createAsyncThunk('eventpro/auth/register', async (userData, { rejectWithValue }) => {
   try {
-    const res = await axios.post(`${apiConfig.eventpro}/auth/register`, userData, {
+    const res = await axios.post(`${apiConfig.eventpro}/auth/register`, { ...userData, platform: 'eventpro' }, {
       headers: { 'Content-Type': 'application/json' },
     });
     localStorage.setItem('eventproToken', res.data.token);
@@ -29,9 +29,9 @@ export const register = createAsyncThunk('eventpro/auth/register', async (userDa
   }
 });
 
-export const login = createAsyncThunk('eventpro/auth/login', async (userData, { rejectWithValue }) => {
+export const login = createAsyncThunk('eventpro/auth/login', async ({ email, password, platform }, { rejectWithValue }) => {
   try {
-    const res = await axios.post(`${apiConfig.eventpro}/auth/login`, userData, {
+    const res = await axios.post(`${apiConfig.eventpro}/auth/login`, { email, password, platform }, {
       headers: { 'Content-Type': 'application/json' },
     });
     localStorage.setItem('eventproToken', res.data.token);
