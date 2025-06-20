@@ -34,7 +34,7 @@ export const loadUser = createAsyncThunk('eventease/auth/loadUser', async (_, { 
   const user = JSON.parse(localStorage.getItem('user'));
   if (token && user) {
     setAuthToken(token);
-    return user; // Trust localStorage if available
+    return user; // Trust localStorage
   }
   try {
     const res = await axios.get(`${apiConfig.eventease}/auth/user`, {
@@ -66,7 +66,6 @@ const authSlice = createSlice({
       state.error = null;
       localStorage.setItem('eventeaseToken', action.payload.token);
       localStorage.setItem('user', JSON.stringify(action.payload.user));
-      setAuthToken(action.payload.token);
     },
   },
   extraReducers: (builder) => {
@@ -100,9 +99,15 @@ const authSlice = createSlice({
       .addCase(loadUser.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
-        state.isAuthenticated = false;
-        state.user = null;
-        state.token = null;
+        if (localStorage.getItem('eventeaseToken') && localStorage.getItem('user')) {
+          state.isAuthenticated = true;
+          state.user = JSON.parse(localStorage.getItem('user'));
+          state.token = localStorage.getItem('eventeaseToken');
+        } else {
+          state.isAuthenticated = false;
+          state.user = null;
+          state.token = null;
+        }
       });
   },
 });
