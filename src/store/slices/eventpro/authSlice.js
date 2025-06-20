@@ -12,22 +12,6 @@ const initialState = {
   error: null,
 };
 
-// Axios Interceptor for 401 Handling
-axios.interceptors.response.use(
-  response => response,
-  error => {
-    if (error.response?.status === 401) {
-      console.error('authSlice.js - 401 Unauthorized:', error.response);
-      toast.error('Session expired. Please log in again.');
-      localStorage.removeItem('eventproToken');
-      localStorage.removeItem('eventproUser');
-      setAuthToken(null);
-      window.location.href = '/event-form';
-    }
-    return Promise.reject(error);
-  }
-);
-
 export const register = createAsyncThunk('eventpro/auth/register', async (userData, { rejectWithValue }) => {
   try {
     const res = await axios.post(`${apiConfig.eventpro}/auth/register`, { ...userData, platform: 'eventpro' }, {
@@ -66,14 +50,14 @@ export const loadUser = createAsyncThunk('eventpro/auth/loadUser', async (_, { r
   const token = localStorage.getItem('eventproToken');
   if (!token) {
     console.log('authSlice.js - No token found');
-    return rejectWithValue('No token found');
+    return rejectWithValue('No token available');
   }
   setAuthToken(token);
   try {
     const res = await axios.get(`${apiConfig.eventpro}/auth/user`, {
       headers: { 'x-auth-token': token },
     });
-    if (res.data.user.platform !== 'eventpro') {
+    if (res.data?.data.user.platform !== 'eventpro') {
       throw new Error('Invalid platform in user data');
     }
     localStorage.setItem('eventproUser', JSON.stringify(res.data.user));
@@ -81,9 +65,12 @@ export const loadUser = createAsyncThunk('eventpro/auth/loadUser', async (_, { r
     return res.data.user;
   } catch (error) {
     console.error('authSlice.js - Error loading user:', error);
-    localStorage.removeItem('eventproToken');
-    localStorage.removeItem('eventproUser');
-    setAuthToken(null);
+    if (error.response?.status === 401) {
+      toast.error('Session expired. Please log in again.');
+      localStorage.removeItem('eventproToken');
+      localStorage.removeItem('eventproUser');
+      setAuthToken(null);
+    }
     return rejectWithValue(error.response?.data?.message || 'Failed to load user');
   }
 });
