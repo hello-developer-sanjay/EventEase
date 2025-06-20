@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { login, loadUser } from '../../store/slices/eventpro/authSlice';
+import { login, loadUser, logout } from '../../store/slices/eventpro/authSlice';
 import styled, { keyframes } from 'styled-components';
 import { RingLoader } from 'react-spinners';
 import { faGoogle } from '@fortawesome/free-brands-svg-icons';
@@ -115,7 +115,7 @@ const ToggleIcon = styled(FontAwesomeIcon)`
 const SignInSignUp = ({ platform }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { isAuthenticated, loading, error } = useSelector(state => state.eventpro.auth);
+  const { isAuthenticated, error } = useSelector(state => state.eventpro.auth);
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [formLoading, setFormLoading] = useState(false);
@@ -126,14 +126,16 @@ const SignInSignUp = ({ platform }) => {
     if (isAuthenticated) {
       navigate(`/${platform}/dashboard`, { replace: true });
     } else if (localStorage.getItem('eventproToken')) {
-      dispatch(loadUser());
+      dispatch(loadUser()).catch(() => {
+        dispatch(logout());
+      });
     }
   }, [dispatch, isAuthenticated, navigate, platform]);
 
   useEffect(() => {
     if (error) {
       toast.error(error);
-      dispatch({ type: 'eventpro/auth/clearError' });
+      dispatch(clearError());
     }
   }, [error, dispatch]);
 
@@ -167,10 +169,6 @@ const SignInSignUp = ({ platform }) => {
   const handleGoogleLogin = () => {
     window.location.href = `https://eventmanager-api-19july.onrender.com/api/auth/google?platform=${platform}`;
   };
-
-  if (loading) {
-    return <RingLoader color="#d4af37" loading={loading} size={60} />;
-  }
 
   return (
     <Container>
