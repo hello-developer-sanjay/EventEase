@@ -1,12 +1,11 @@
-import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
-import { setAuth as setEventEaseAuth } from './store/slices/eventease/authSlice';
-import { setAuth as setEventProAuth, loadUser, logout } from './store/slices/eventpro/authSlice';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
+import { logout } from './store/slices/eventpro/authSlice';
 import Layout from './shared/components/Layout';
 import ErrorBoundary from './shared/components/ErrorBoundary';
 import { toast } from 'react-toastify';
-import { Navigate } from 'react-router-dom';
 
 // Home Page
 import Home from './Home';
@@ -25,73 +24,44 @@ import SignInSignUp from './eventpro/components/SignInSignUp';
 import Register from './eventpro/pages/Register';
 import Dashboard from './eventpro/pages/Dashboard';
 
-const App = () => {
+const PrivateRoute = ({ element }) => {
   const dispatch = useDispatch();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { isAuthenticated: easeAuthenticated } = useSelector((state) => state.eventease.auth);
   const { isAuthenticated: proAuthenticated, user: proUser } = useSelector((state) => state.eventpro.auth);
+  const token = localStorage.getItem('eventproToken');
+  const user = localStorage.getItem('eventproUser');
 
-  useEffect(() => {
-    console.log('App.jsx - Initializing auth check');
-    const token = localStorage.getItem('eventproToken');
-    const user = localStorage.getItem('eventproUser');
-    const platform = location.pathname.startsWith('/eventpro') || location.pathname === '/event-form' ? 'eventpro' : 'eventease';
-    
-    console.log('App.jsx - Platform:', platform);
-    console.log('App.jsx - Current path:', location.pathname);
-    console.log('App.jsx - Redux state:', { easeAuthenticated, proAuthenticated, proUser });
+  console.log('PrivateRoute - Checking auth:', { proAuthenticated, proUser, token });
 
-    if (platform === 'eventpro' && token && user) {
-      try {
-        const userData = JSON.parse(user);
-        if (userData._id && userData.email && userData.platform === 'eventpro') {
-          dispatch(setEventProAuth({ user: userData, token }));
-          dispatch(loadUser())
-            .then(() => {
-              console.log('App.jsx - loadUser success');
-              if (location.pathname === '/event-form') {
-                navigate(userData.role === 'admin' ? '/eventpro/admin-dashboard' : '/eventpro/dashboard', { replace: true });
-              }
-            })
-            .catch((error) => {
-              console.error('App.jsx - loadUser failed:', error);
-              dispatch(logout());
-              toast.error('Failed to load user. Please log in again.');
-              navigate('/event-form', { replace: true });
-            });
-        } else {
-          throw new Error('Invalid localStorage user data');
-        }
-      } catch (error) {
-        console.error('App.jsx - Error parsing localStorage user:', error);
-        dispatch(logout());
-        localStorage.removeItem('eventproToken');
-        localStorage.removeItem('eventproUser');
-        navigate('/event-form', { replace: true });
-      }
-    } else if (platform === 'eventease' && !easeAuthenticated) {
-      if (localStorage.getItem('eventeaseToken') && localStorage.getItem('eventeaseUser')) {
-        try {
-          const userData = JSON.parse(localStorage.getItem('eventeaseUser') || '{}');
-          const token = localStorage.getItem('eventeaseToken');
-          if (userData._id && userData.email && token && userData.platform === 'eventease') {
-            dispatch(setEventEaseAuth({ user: userData, token }));
-            console.log('App.jsx - Restored EventEase auth from localStorage');
-            navigate(userData.role === 'admin' ? '/admin-dashboard' : '/eventease', { replace: true });
-          } else {
-            throw new Error('Invalid localStorage user data');
-          }
-        } catch (error) {
-          console.error('App.jsx - Error parsing localStorage user:', error);
-          toast.error('Invalid stored user data');
-          localStorage.removeItem('eventeaseToken');
-          localStorage.removeItem('eventeaseUser');
-          navigate('/eventease/login', { replace: true });
-        }
-      }
+  if (!proAuthenticated || !token || !user) {
+    console.log('PrivateRoute - Not authenticated, redirecting to /event-form');
+    if (token || user) {
+      dispatch(logout());
+      toast.error('Session invalid. Please log in again.');
     }
-  }, []); // Empty deps to run once on mount
+    return <Navigate to="/event-form" replace />;
+  }
+
+  try {
+    const userData = JSON.parse(user);
+    if (!userData._id || !userData.email || userData.platform !== 'eventpro') {
+      console.error('PrivateRoute - Invalid user data:', userData);
+      dispatch(logout());
+      toast.error('Invalid user data. Please log in again.');
+      return <Navigate to="/event-form" replace />;
+    }
+    return element;
+  } catch (error) {
+    console.error('PrivateRoute - Error parsing user data:', error);
+    dispatch(logout());
+    toast.error('Invalid user data. Please log in again.');
+    return <Navigate to="/event-form" replace />;
+  }
+};
+
+const App = () => {
+  const { isAuthenticated: easeAuthenticated } = useSelector((state) => state.eventease.auth);
+
+  console.log('App.jsx - Rendering:', { easeAuthenticated });
 
   return (
     <ErrorBoundary>
@@ -99,44 +69,26 @@ const App = () => {
         <Routes>
           <Route path="/" element={<Home />} />
           {/* EventEase Routes */}
-          <Route path="/eventease" element={<Calendar />} />
+          <Route
+            path="/eventease"
+            element={easeAuthenticated ? <Calendar /> : <Navigate to="/eventease/login" replace />}
+          />
           <Route path="/eventease/login" element={<Login />} />
           <Route path="/eventease/sync-google-calendar" element={<GoogleCalendarSync />} />
           <Route path="/eventease/create-event" element={<Calendar />} />
           {/* EventPro Routes */}
-          <Route
-            path="/eventpro"
-            element={proAuthenticated ? <ListEventsPage /> : <Navigate to="/event-form" replace />}
-          />
-          <Route
-            path="/eventpro/add-event"
-            element={proAuthenticated ? <AddEventPage /> : <Navigate to="/event-form" replace />}
-          />
-          <Route
-            path="/eventpro/add-event/:id"
-            element={proAuthenticated ? <AddEventPage /> : <Navigate to="/event-form" replace />}
-          />
+          <Route path="/eventpro" element={<PrivateRoute element={<ListEventsPage />} />} />
+          <Route path="/eventpro/add-event" element={<PrivateRoute element={<AddEventPage />} />} />
+          <Route path="/eventpro/add-event/:id" element={<PrivateRoute element={<AddEventPage />} />} />
           <Route path="/eventpro/register" element={<Register />} />
           <Route path="/eventpro/forgot-password" element={<ForgotPassword />} />
           <Route path="/eventpro/reset-password/:token" element={<ResetPassword />} />
-          <Route
-            path="/eventpro/dashboard"
-            element={proAuthenticated ? <Dashboard /> : <Navigate to="/event-form" replace />}
-          />
+          <Route path="/eventpro/dashboard" element={<PrivateRoute element={<Dashboard />} />} />
           <Route path="/event-form" element={<SignInSignUp platform="eventpro" />} />
-          <Route
-            path="/eventpro/list-events"
-            element={proAuthenticated ? <ListEventsPage /> : <Navigate to="/event-form" replace />}
-          />
+          <Route path="/eventpro/list-events" element={<PrivateRoute element={<ListEventsPage />} />} />
           <Route
             path="/eventpro/admin-dashboard"
-            element={
-              proAuthenticated && proUser?.role === 'admin' ? (
-                <Dashboard />
-              ) : (
-                <Navigate to="/event-form" replace />
-              )
-            }
+            element={<PrivateRoute element={<Dashboard />} />}
           />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
