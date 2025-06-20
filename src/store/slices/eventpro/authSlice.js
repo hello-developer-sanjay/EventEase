@@ -23,7 +23,7 @@ axios.interceptors.response.use(
 const initialState = {
   token: localStorage.getItem('eventproToken') || null,
   user: JSON.parse(localStorage.getItem('eventproUser')) || null,
-  isAuthenticated: !!localStorage.getItem('eventproToken'),
+  isAuthenticated: false, // Start false, set true after login
   loading: false,
   error: null,
 };
