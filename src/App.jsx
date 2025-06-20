@@ -1,12 +1,11 @@
 import React, { useEffect, useCallback } from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate ,Navigate} from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { setAuth as setEventEaseAuth } from './store/slices/eventease/authSlice';
 import { setAuth as setEventProAuth, loadUser, logout } from './store/slices/eventpro/authSlice';
 import Layout from './shared/components/Layout';
 import ErrorBoundary from './shared/components/ErrorBoundary';
 import { toast } from 'react-toastify';
-import { Navigate } from 'react-router-dom';
 
 // Home Page
 import Home from './Home';
@@ -35,7 +34,7 @@ const App = () => {
   const handleAuth = useCallback(() => {
     const searchParams = new URLSearchParams(location.search);
     const user = searchParams.get('user');
-    const platform = searchParams.get('platform') || 'eventease';
+    const platform = searchParams.get('platform') || (location.pathname.startsWith('/eventpro') ? 'eventpro' : 'eventease');
 
     console.log('App.jsx - Raw user query:', user);
     console.log('App.jsx - Platform:', platform);
