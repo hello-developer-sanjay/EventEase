@@ -33,7 +33,7 @@ const App = () => {
   const eventeaseState = useSelector(state => state.eventease);
   const eventproState = useSelector(state => state.eventpro);
 
-  const handleAuth = useCallback(async () => {
+  const handleAuth = useCallback(() => {
     const searchParams = new URLSearchParams(location.search);
     const user = searchParams.get('user');
     const platform = searchParams.get('platform') || 'eventease';
@@ -54,15 +54,19 @@ const App = () => {
           localStorage.setItem('eventproToken', token);
           localStorage.setItem('eventproUser', JSON.stringify(parsedUser));
           dispatch(setEventProAuth({ user: parsedUser, token }));
-          await dispatch(loadEventProUser()).unwrap();
-          navigate(parsedUser.role === 'admin' ? '/eventpro/admin-dashboard' : '/eventpro/dashboard', { replace: true });
+          dispatch(loadEventProUser()).then(() => {
+            navigate(parsedUser.role === 'admin' ? '/eventpro/admin-dashboard' : '/eventpro/dashboard', { replace: true });
+          }).catch(() => {
+            dispatch(logout());
+            navigate('/event-form', { replace: true });
+          });
         } else {
           localStorage.setItem('eventeaseToken', token);
           localStorage.setItem('eventeaseUser', JSON.stringify(parsedUser));
           dispatch(setEventEaseAuth({ user: parsedUser, token }));
           navigate(parsedUser.role === 'admin' ? '/admin-dashboard' : '/eventease', { replace: true });
         }
-        navigate(location.pathname, { replace: true });
+        navigate(location.pathname, { replace: true }); // Clear query params
       } catch (error) {
         console.error('Error parsing user from query:', error, 'Raw user:', user);
         toast.error('Invalid user data format');
@@ -90,15 +94,19 @@ const App = () => {
       } else {
         navigate('/eventease/login', { replace: true });
       }
-    } else if (location.pathname.startsWith('/eventpro') && !proAuthenticated) {
+    } else if ((location.pathname.startsWith('/eventpro') || location.pathname === '/event-form') && !proAuthenticated) {
       if (localStorage.getItem('eventproToken') && localStorage.getItem('eventproUser')) {
         try {
           const user = JSON.parse(localStorage.getItem('eventproUser') || '{}');
           const token = localStorage.getItem('eventproToken');
           if (user._id && user.email && token) {
             dispatch(setEventProAuth({ user, token }));
-            await dispatch(loadEventProUser()).unwrap();
-            console.log('Restored EventPro auth from localStorage');
+            dispatch(loadEventProUser()).then(() => {
+              navigate(user.role === 'admin' ? '/eventpro/admin-dashboard' : '/eventpro/dashboard', { replace: true });
+            }).catch(() => {
+              dispatch(logout());
+              navigate('/event-form', { replace: true });
+            });
           } else {
             throw new Error('Invalid localStorage user data');
           }
@@ -111,10 +119,12 @@ const App = () => {
           navigate('/event-form', { replace: true });
         }
       } else {
-        navigate('/event-form', { replace: true });
+        if (location.pathname !== '/event-form') {
+          navigate('/event-form', { replace: true });
+        }
       }
     }
-  }, [dispatch, location.search, navigate, easeAuthenticated, proAuthenticated, eventeaseState, eventproState]);
+  }, [dispatch, location.pathname, location.search, navigate, easeAuthenticated, proAuthenticated, eventeaseState, eventproState]);
 
   useEffect(() => {
     handleAuth();
