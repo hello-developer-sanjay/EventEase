@@ -123,17 +123,21 @@ const SignInSignUp = ({ platform }) => {
   const { email, password } = formData;
 
   useEffect(() => {
+    console.log('SignInSignUp.jsx - Checking auth:', { isAuthenticated, platform });
     if (isAuthenticated) {
       navigate(`/${platform}/dashboard`, { replace: true });
     } else if (localStorage.getItem('eventproToken')) {
-      dispatch(loadUser()).catch(() => {
+      dispatch(loadUser()).catch((err) => {
+        console.error('SignInSignUp.jsx - loadUser failed:', err);
         dispatch(logout());
+        navigate('/event-form', { replace: true });
       });
     }
   }, [dispatch, isAuthenticated, navigate, platform]);
 
   useEffect(() => {
     if (error) {
+      console.log('SignInSignUp.jsx - Error:', error);
       toast.error(error);
       dispatch(clearError());
     }
@@ -153,20 +157,29 @@ const SignInSignUp = ({ platform }) => {
       toast.error('Please fill in all fields');
       return;
     }
+    if (platform !== 'eventpro') {
+      console.error('SignInSignUp.jsx - Invalid platform:', platform);
+      toast.error('Invalid platform. Please use EventPro login.');
+      navigate('/event-form', { replace: true });
+      return;
+    }
     setFormLoading(true);
     try {
       const response = await dispatch(login({ email, password, platform })).unwrap();
       setFormLoading(false);
       localStorage.setItem('eventproToken', response.token);
       localStorage.setItem('eventproUser', JSON.stringify(response.user));
+      console.log('SignInSignUp.jsx - Login success, navigating to dashboard');
       navigate(response.user.role === 'admin' ? `/${platform}/admin-dashboard` : `/${platform}/dashboard`, { replace: true });
     } catch (err) {
       setFormLoading(false);
+      console.error('SignInSignUp.jsx - Login failed:', err);
       toast.error(err || 'Invalid email or password');
     }
   };
 
   const handleGoogleLogin = () => {
+    console.log('SignInSignUp.jsx - Initiating Google login for platform:', platform);
     window.location.href = `https://eventmanager-api-19july.onrender.com/api/auth/google?platform=${platform}`;
   };
 
