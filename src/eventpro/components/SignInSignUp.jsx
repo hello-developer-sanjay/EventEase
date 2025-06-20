@@ -160,7 +160,7 @@ const SignInSignUp = ({ platform }) => {
   };
 
   const handleGoogleLogin = () => {
-    window.location.href = `https://event-ease-unified-event-manager.onrender.com/api/auth/google?platform=${platform}`;
+    window.location.href = `https://eventmanager-api-19july.onrender.com/api/auth/google`;
   };
 
   return (
