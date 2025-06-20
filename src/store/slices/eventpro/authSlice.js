@@ -47,10 +47,13 @@ export const register = createAsyncThunk('eventpro/auth/register', async (userDa
 
 export const login = createAsyncThunk('eventpro/auth/login', async ({ email, password, platform }, { rejectWithValue }) => {
   try {
-    const res = await axios.post(`${apiConfig.eventpro}/auth/login`, { email, password, platform }, { headers: { 'Content-Type': 'application/json' } });
+    const res = await axios.post(`${apiConfig.eventpro}/auth/login`, { email, password, platform }, {
+      headers: { 'Content-Type': 'application/json' },
+    });
     localStorage.setItem('eventproToken', res.data.token);
     localStorage.setItem('eventproUser', JSON.stringify(res.data.user));
     setAuthToken(res.data.token);
+    console.log('authSlice.js - Login success:', { user: res.data.user, token: res.data.token });
     toast.success('Login successful!');
     return res.data;
   } catch (error) {
@@ -74,8 +77,8 @@ export const loadUser = createAsyncThunk('eventpro/auth/loadUser', async (_, { r
     if (res.data.user.platform !== 'eventpro') {
       throw new Error('Invalid platform in user data');
     }
-    localStorage.setItem('eventproUser', JSON.stringify(res.data.user.data.user));
-    console.log('authSlice.js - loadUser success:', res.data.user.user);
+    localStorage.setItem('eventproUser', JSON.stringify(res.data.user));
+    console.log('authSlice.js - loadUser success:', res.data.user);
     return res.data.user;
   } catch (error) {
     console.error('authSlice.js - Error loading user:', error);
