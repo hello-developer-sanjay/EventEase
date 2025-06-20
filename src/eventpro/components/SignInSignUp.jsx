@@ -4,8 +4,10 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { login } from '../../store/slices/eventpro/authSlice';
 import styled, { keyframes } from 'styled-components';
 import { RingLoader } from 'react-spinners';
+import { faGoogle } from '@fortawesome/free-brands-svg-icons';
+
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faEye, faEyeSlash, faGoogle } from '@fortawesome/free-solid-svg-icons';
+import { faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
