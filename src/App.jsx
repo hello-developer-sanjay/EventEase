@@ -1,8 +1,8 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { setAuth as setEventEaseAuth } from './store/slices/eventease/authSlice';
-import { setAuth as setEventProAuth, loadUser as loadEventProUser } from './store/slices/eventpro/authSlice';
+import { setAuth as setEventProAuth, loadUser as loadEventProUser, logout } from './store/slices/eventpro/authSlice';
 import Layout from './shared/components/Layout';
 import ErrorBoundary from './shared/components/ErrorBoundary';
 import { toast } from 'react-toastify';
@@ -29,12 +29,11 @@ const App = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isAuthenticated: easeAuthenticated } = useSelector(state => state.eventease.auth);
-  const { isAuthenticated: proAuthenticated } = useSelector(state => state.eventpro.auth);
-  // Move useSelector to top level for Redux state logging
+  const { isAuthenticated: proAuthenticated, user: proUser } = useSelector(state => state.eventpro.auth);
   const eventeaseState = useSelector(state => state.eventease);
   const eventproState = useSelector(state => state.eventpro);
 
-  useEffect(() => {
+  const handleAuth = useCallback(async () => {
     const searchParams = new URLSearchParams(location.search);
     const user = searchParams.get('user');
     const platform = searchParams.get('platform') || 'eventease';
@@ -42,7 +41,6 @@ const App = () => {
     console.log('Raw user query:', user);
     console.log('Platform:', platform);
     console.log('Current path:', location.pathname);
-    // Log Redux state using top-level selectors
     console.log('Redux state in App:', JSON.stringify({ eventease: eventeaseState, eventpro: eventproState }));
 
     if (user) {
@@ -56,6 +54,7 @@ const App = () => {
           localStorage.setItem('eventproToken', token);
           localStorage.setItem('eventproUser', JSON.stringify(parsedUser));
           dispatch(setEventProAuth({ user: parsedUser, token }));
+          await dispatch(loadEventProUser()).unwrap();
           navigate(parsedUser.role === 'admin' ? '/eventpro/admin-dashboard' : '/eventpro/dashboard', { replace: true });
         } else {
           localStorage.setItem('eventeaseToken', token);
@@ -63,11 +62,11 @@ const App = () => {
           dispatch(setEventEaseAuth({ user: parsedUser, token }));
           navigate(parsedUser.role === 'admin' ? '/admin-dashboard' : '/eventease', { replace: true });
         }
-        // Clear query parameters
         navigate(location.pathname, { replace: true });
       } catch (error) {
         console.error('Error parsing user from query:', error, 'Raw user:', user);
         toast.error('Invalid user data format');
+        dispatch(logout());
         navigate(`/${platform}/login`, { replace: true });
       }
     } else if (location.pathname.startsWith('/eventease') && !easeAuthenticated) {
@@ -98,14 +97,15 @@ const App = () => {
           const token = localStorage.getItem('eventproToken');
           if (user._id && user.email && token) {
             dispatch(setEventProAuth({ user, token }));
+            await dispatch(loadEventProUser()).unwrap();
             console.log('Restored EventPro auth from localStorage');
-            dispatch(loadEventProUser()).catch(error => console.error('EventPro loadUser failed:', error));
           } else {
             throw new Error('Invalid localStorage user data');
           }
         } catch (error) {
           console.error('Error parsing localStorage user:', error);
           toast.error('Invalid stored user data');
+          dispatch(logout());
           localStorage.removeItem('eventproToken');
           localStorage.removeItem('eventproUser');
           navigate('/event-form', { replace: true });
@@ -114,7 +114,11 @@ const App = () => {
         navigate('/event-form', { replace: true });
       }
     }
-  }, [dispatch, location.pathname, navigate, easeAuthenticated, proAuthenticated]);
+  }, [dispatch, location.search, navigate, easeAuthenticated, proAuthenticated, eventeaseState, eventproState]);
+
+  useEffect(() => {
+    handleAuth();
+  }, [handleAuth]);
 
   return (
     <ErrorBoundary>
@@ -154,7 +158,7 @@ const App = () => {
           <Route
             path="/eventpro/admin-dashboard"
             element={
-              proAuthenticated && useSelector(state => state.eventpro.auth.user?.role) === 'admin' ? (
+              proAuthenticated && proUser?.role === 'admin' ? (
                 <Dashboard />
               ) : (
                 <Navigate to="/event-form" replace />
