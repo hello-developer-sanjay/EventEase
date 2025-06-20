@@ -32,10 +32,8 @@ export const login = createAsyncThunk('eventease/auth/login', async ({ email, pa
 export const loadUser = createAsyncThunk('eventease/auth/loadUser', async (_, { rejectWithValue }) => {
   const token = localStorage.getItem('eventeaseToken');
   const user = JSON.parse(localStorage.getItem('user'));
-  if (token) {
+  if (token && user) {
     setAuthToken(token);
-  }
-  if (user && token) {
     return user; // Trust localStorage if available
   }
   try {
@@ -45,10 +43,11 @@ export const loadUser = createAsyncThunk('eventease/auth/loadUser', async (_, { 
     localStorage.setItem('user', JSON.stringify(res.data.user));
     return res.data.user;
   } catch (error) {
-    console.error('Error loading user:', error);
+    console.error('Error loading user:', error, 'Response:', error.response);
+    toast.error('Session expired or invalid. Please log in again.');
     localStorage.removeItem('eventeaseToken');
     localStorage.removeItem('user');
-    return rejectWithValue(error.response?.data?.message || 'Failed to load user');
+    return rejectWithValue('Session expired or invalid');
   }
 });
 
@@ -58,6 +57,16 @@ const authSlice = createSlice({
   reducers: {
     clearError(state) {
       state.error = null;
+    },
+    setAuth(state, action) {
+      state.token = action.payload.token;
+      state.user = action.payload.user;
+      state.isAuthenticated = true;
+      state.loading = false;
+      state.error = null;
+      localStorage.setItem('eventeaseToken', action.payload.token);
+      localStorage.setItem('user', JSON.stringify(action.payload.user));
+      setAuthToken(action.payload.token);
     },
   },
   extraReducers: (builder) => {
@@ -98,5 +107,5 @@ const authSlice = createSlice({
   },
 });
 
-export const { clearError } = authSlice.actions;
+export const { clearError, setAuth } = authSlice.actions;
 export default authSlice.reducer;
