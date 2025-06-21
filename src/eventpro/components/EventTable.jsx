@@ -1,12 +1,13 @@
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { deleteEvent, fetchEvents } from '../../store/slices/eventpro/eventSlice';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import DataTable from 'react-data-table-component';
 import { Helmet } from 'react-helmet';
 import styled from 'styled-components';
 import { format } from 'date-fns';
 import { toast } from 'react-toastify';
+import setAuthToken from '../utils/setAuthToken';
 
 const TableContainer = styled.div`
   max-width: 1200px;
@@ -48,17 +49,54 @@ const DeleteButton = styled(ActionButton)`
 
 const EventTable = () => {
   const events = useSelector((state) => state.eventpro.events.events || []);
-  const { isAuthenticated } = useSelector((state) => state.eventpro.auth);
+  const { isAuthenticated, user } = useSelector((state) => state.eventpro.auth);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      navigate('/eventpro/login');
-    } else {
-      dispatch(fetchEvents());
+    const searchParams = new URLSearchParams(location.search);
+    const userParam = searchParams.get('user');
+    const userPlatform = searchParams.get('platform');
+
+    if (userParam && userPlatform === 'eventpro') {
+      try {
+        const parsedUser = JSON.parse(decodeURIComponent(userParam));
+        const token = localStorage.getItem('eventproToken');
+        if (parsedUser._id && parsedUser.email && token && parsedUser.platform === 'eventpro') {
+          setAuthToken(token);
+          console.log('EventTable.jsx - User verified from query:', parsedUser);
+        } else {
+          throw new Error('Invalid user data');
+        }
+      } catch (error) {
+        console.error('EventTable.jsx - Error verifying user:', error);
+        dispatch(logout());
+        localStorage.removeItem('eventproToken');
+        localStorage.removeItem('eventproUser');
+        setAuthToken(null);
+        toast.error('Invalid session. Please log in again.');
+        navigate('/event-form', { replace: true });
+      }
     }
-  }, [dispatch, isAuthenticated, navigate]);
+
+    if (!isAuthenticated) {
+      console.log('EventTable.jsx - Not authenticated, redirecting to /event-form');
+      navigate('/event-form', { replace: true });
+    } else {
+      const token = localStorage.getItem('eventproToken');
+      if (token) {
+        setAuthToken(token);
+        dispatch(fetchEvents()).catch(error => {
+          console.error('EventTable.jsx - fetchEvents failed:', error);
+          toast.error('Failed to load events. Please try again.');
+        });
+      } else {
+        dispatch(logout());
+        navigate('/event-form', { replace: true });
+      }
+    }
+  }, [dispatch, isAuthenticated, navigate, location.search]);
 
   const handleDelete = async (eventId) => {
     if (window.confirm('Are you sure you want to delete this event?')) {
@@ -66,13 +104,15 @@ const EventTable = () => {
         await dispatch(deleteEvent(eventId)).unwrap();
         toast.success('Event deleted successfully');
       } catch (error) {
+        console.error('EventTable.jsx - Error deleting event:', error);
         toast.error(error || 'Failed to delete event');
       }
     }
   };
 
   const handleEdit = (event) => {
-    navigate(`/eventpro/add-event/${event._id}`, { state: { eventToEdit: event } });
+    const userParam = encodeURIComponent(JSON.stringify(user));
+    navigate(`/eventpro/add-event/${event._id}?platform=eventpro&user=${userParam}`, { state: { eventToEdit: event } });
   };
 
   const columns = [
