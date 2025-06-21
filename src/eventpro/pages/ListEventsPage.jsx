@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import EventTable from '../components/EventTable';
 import styled from 'styled-components';
@@ -8,47 +8,29 @@ import { toast } from 'react-toastify';
 
 const ListEventsPage = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const { isAuthenticated, user } = useSelector((state) => state.eventpro.auth);
-
-  const searchParams = new URLSearchParams(location.search);
-  const userParam = searchParams.get('user');
-  const userPlatform = searchParams.get('platform');
+  const { isAuthenticated } = useSelector((state) => state.eventpro.auth);
 
   useEffect(() => {
-    if (userParam && userPlatform === 'eventpro') {
-      try {
-        const parsedUser = JSON.parse(decodeURIComponent(userParam));
-        const token = localStorage.getItem('eventproToken');
-        if (parsedUser._id && parsedUser.email && token && parsedUser.platform === 'eventpro') {
-          setAuthToken(token);
-          console.log('ListEventsPage.jsx - User verified from query:', parsedUser);
-        } else {
-          throw new Error('Invalid user data');
-        }
-      } catch (error) {
-        console.error('ListEventsPage.jsx - Error verifying user:', error);
-        toast.error('Invalid session. Please log in again.');
-        navigate('/event-form', { replace: true });
-      }
-    }
-
     if (!isAuthenticated) {
       console.log('ListEventsPage.jsx - Not authenticated, redirecting to /event-form');
       toast.error('Please log in to access this page.');
       navigate('/event-form', { replace: true });
+    } else {
+      const token = localStorage.getItem('eventproToken');
+      if (token) {
+        setAuthToken(token);
+      } else {
+        console.log('ListEventsPage.jsx - No token found, redirecting to /event-form');
+        toast.error('Session expired. Please log in again.');
+        navigate('/event-form', { replace: true });
+      }
     }
-  }, [isAuthenticated, navigate, location.search]);
-
-  const handleAddEvent = () => {
-    const userParam = encodeURIComponent(JSON.stringify(user));
-    navigate(`/eventpro/add-event?platform=eventpro&user=${userParam}`);
-  };
+  }, [isAuthenticated, navigate]);
 
   return (
     <PageWrapper>
       <Header>
-        <Button onClick={handleAddEvent}>Add Event</Button>
+        <Button onClick={() => navigate('/eventpro/add-event')}>Add Event</Button>
       </Header>
       <EventTable />
     </PageWrapper>
@@ -74,7 +56,7 @@ const Header = styled.div`
   padding: 20px;
 `;
 
-const Button = styled.button`
+const Button = styled.div`
   padding: 10px 20px;
   background-color: #4caf50;
   color: white;
