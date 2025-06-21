@@ -9,7 +9,7 @@ const eventProAxios = axios.create({
   baseURL: apiConfig.eventpro,
 });
 
-// Log headers for debugging
+// Log headers and response for debugging
 eventProAxios.interceptors.request.use(
   (config) => {
     console.log('eventSlice.js - Request headers:', config.headers);
@@ -22,7 +22,10 @@ eventProAxios.interceptors.request.use(
 );
 
 eventProAxios.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    console.log('eventSlice.js - Response data:', response.data);
+    return response;
+  },
   (error) => {
     console.error('eventSlice.js - Response interceptor error:', error.response?.data || error.message);
     return Promise.reject(error);
@@ -85,11 +88,12 @@ export const updateEvent = createAsyncThunk('eventpro/events/updateEvent', async
   try {
     setAuthToken(token);
     console.log('eventSlice.js - Updating event with token:', token);
+    console.log('eventSlice.js - Updating event ID:', event._id);
     const res = await eventProAxios.put(`/events/${event._id}`, { ...event, platform: 'eventpro' }, {
       headers: { 'x-auth-token': token, 'Content-Type': 'application/json' },
     });
     toast.success('Event updated successfully!');
-    return res.data.event;
+    return res.data.event; // Expect { _id, eventName, ... }
   } catch (error) {
     console.error('eventSlice.js - Error updating event:', error.response?.data || error.message);
     toast.error(error.response?.data?.msg || 'Failed to update event');
@@ -154,9 +158,15 @@ const eventSlice = createSlice({
       })
       .addCase(updateEvent.fulfilled, (state, action) => {
         state.loading = false;
-        const index = state.events.findIndex((event) => event._id === action.payload._id);
+        // Fallback if _id is missing
+        const eventId = action.payload._id || action.meta.arg._id;
+        if (!eventId) {
+          console.error('eventSlice.js - Missing _id in updateEvent payload:', action.payload);
+          return;
+        }
+        const index = state.events.findIndex((event) => event._id === eventId);
         if (index !== -1) {
-          state.events[index] = action.payload;
+          state.events[index] = { ...action.payload, _id: eventId };
         }
       })
       .addCase(updateEvent.rejected, (state, action) => {
