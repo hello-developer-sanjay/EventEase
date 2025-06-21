@@ -77,8 +77,7 @@ const Dashboard = () => {
       toast.error('Session expired. Please log in again.');
       navigate('/event-form', { replace: true });
     } else {
-      const userParam = encodeURIComponent(JSON.stringify(user));
-      navigate(`${path}?platform=eventpro&user=${userParam}`);
+      navigate(path);
     }
   };
 
