@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { loadUser, logout, clearError } from '../../store/slices/eventpro/authSlice';
+import { clearError } from '../../store/slices/eventpro/authSlice';
 import styled from 'styled-components';
 import { toast } from 'react-toastify';
 
@@ -35,7 +35,7 @@ const Button = styled.button`
   border-radius: 5px;
   cursor: pointer;
   font-size: 16px;
-  margin-top: 20px;
+  margin: 10px;
   &:hover {
     background-color: #45a049;
   }
@@ -55,33 +55,37 @@ const Dashboard = () => {
 
   useEffect(() => {
     console.log('Dashboard.jsx - Checking auth:', { isAuthenticated, user });
-    const token = localStorage.getItem('eventproToken');
-    if (token && !isAuthenticated) {
-      dispatch(loadUser()).then(() => {
-        console.log('Dashboard.jsx - loadUser success');
-      }).catch((err) => {
-        console.error('Dashboard.jsx - loadUser failed:', err);
-        dispatch(logout());
-        toast.error('Session expired. Please log in again.');
-        navigate('/event-form', { replace: true });
-      });
-    }
     if (error) {
       console.log('Dashboard.jsx - Error:', error);
       toast.error(error);
       dispatch(clearError());
     }
-  }, [dispatch, isAuthenticated, error, navigate]);
+  }, [dispatch, error]);
 
   if (!isAuthenticated || !user) {
     console.log('Dashboard.jsx - Not authenticated, redirecting to /event-form');
+    toast.error('Please log in to access the dashboard.');
     navigate('/event-form', { replace: true });
     return null;
   }
 
+  const handleNavigation = (path) => {
+    console.log(`Dashboard.jsx - Navigating to ${path}`);
+    const token = localStorage.getItem('eventproToken');
+    if (!token) {
+      console.log('Dashboard.jsx - No token found, redirecting to /event-form');
+      toast.error('Session expired. Please log in again.');
+      navigate('/event-form', { replace: true });
+    } else {
+      navigate(path);
+    }
+  };
+
   const handleLogout = () => {
     console.log('Dashboard.jsx - Logging out');
     dispatch(logout());
+    localStorage.removeItem('eventproToken');
+    localStorage.removeItem('eventproUser');
     toast.success('Logged out successfully.');
     navigate('/event-form', { replace: true });
   };
@@ -92,8 +96,8 @@ const Dashboard = () => {
       <Info>Welcome, {user.name}!</Info>
       <Info>Email: {user.email}</Info>
       <Info>Role: {user.role}</Info>
-      <Button onClick={() => navigate('/eventpro/list-events')}>View Events</Button>
-      <Button onClick={() => navigate('/eventpro/add-event')}>Add Event</Button>
+      <Button onClick={() => handleNavigation('/eventpro/list-events')}>View Events</Button>
+      <Button onClick={() => handleNavigation('/eventpro/add-event')}>Add Event</Button>
       <LogoutButton onClick={handleLogout}>Logout</LogoutButton>
     </Container>
   );
