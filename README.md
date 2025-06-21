@@ -61,7 +61,7 @@
 
 ## 📍 Live Links
 
-- 🌐 Website: [https://event-manager-two.vercel.app](https://eventunified.vercel.app)  
+- 🌐 Website: [https://eventunified.vercel.app](https://eventunified.vercel.app)  
 - 🛠️ API: [https://eventmanager-api-19july.onrender.com/api](https://eventmanager-api-19july.onrender.com/api)  
 
 ---
