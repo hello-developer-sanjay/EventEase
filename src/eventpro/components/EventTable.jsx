@@ -49,7 +49,8 @@ const DeleteButton = styled(ActionButton)`
 
 const EventTable = () => {
   const events = useSelector((state) => state.eventpro.events.events || []);
-  const { isAuthenticated } = useSelector((state) => state.eventpro.auth);
+  const { isAuthenticated, token } = useSelector((state) => state.eventpro.auth);
+  const { error } = useSelector((state) => state.eventpro.events);
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -57,24 +58,28 @@ const EventTable = () => {
     if (!isAuthenticated) {
       console.log('EventTable.jsx - Not authenticated, redirecting to /event-form');
       navigate('/event-form', { replace: true });
+    } else if (!token) {
+      console.log('EventTable.jsx - No token found, redirecting to /event-form');
+      toast.error('Session expired. Please log in again.');
+      navigate('/event-form', { replace: true });
     } else {
-      const token = localStorage.getItem('eventproToken');
-      if (token) {
-        setAuthToken(token);
-        dispatch(fetchEvents()).catch(error => {
-          console.error('EventTable.jsx - fetchEvents failed:', error);
-          toast.error('Failed to load events. Please try again.');
-        });
-      } else {
-        dispatch(logout());
-        navigate('/event-form', { replace: true });
-      }
+      setAuthToken(token);
+      console.log('EventTable.jsx - Fetching events with token:', token);
+      dispatch(fetchEvents()).catch(error => {
+        console.error('EventTable.jsx - fetchEvents failed:', error);
+        toast.error('Failed to load events. Please try again.');
+      });
     }
-  }, [dispatch, isAuthenticated, navigate]);
+    if (error) {
+      console.log('EventTable.jsx - Error:', error);
+      toast.error(error);
+    }
+  }, [dispatch, isAuthenticated, navigate, token, error]);
 
   const handleDelete = async (eventId) => {
     if (window.confirm('Are you sure you want to delete this event?')) {
       try {
+        setAuthToken(token);
         await dispatch(deleteEvent(eventId)).unwrap();
         toast.success('Event deleted successfully');
       } catch (error) {
