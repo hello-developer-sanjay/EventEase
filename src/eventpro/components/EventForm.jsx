@@ -1,326 +1,181 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { addEvent, updateEvent } from '../../store/slices/eventpro/eventSlice';
-import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
-import PropTypes from 'prop-types';
+import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { toast } from 'react-toastify';
-import { logout } from '../../store/slices/eventpro/authSlice';
-import { useNavigate } from 'react-router-dom';
+import setAuthToken from '../utils/setAuthToken';
 
-const FormContainer = styled.div`
-  max-width: 600px;
-  margin: 20px auto;
-  padding: 20px;
-  border: 1px solid #e6e6e6;
-  border-radius: 10px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  background: rgba(255, 255, 255, 0.9);
-`;
-
-const StyledForm = styled.form`
+const Form = styled.form`
   display: flex;
   flex-direction: column;
   gap: 15px;
+  max-width: 500px;
+  margin: 0 auto;
 `;
 
-const FormGroup = styled.div`
-  display: flex;
-  flex-direction: column;
-`;
-
-const Label = styled.label`
-  font-size: 14px;
-  font-weight: 600;
-  margin-bottom: 5px;
-  color: #333;
-`;
-
-const InputField = styled.input`
+const Input = styled.input`
   padding: 10px;
-  border: 1px solid #e6e6e6;
+  border: 1px solid #ccc;
   border-radius: 5px;
   font-size: 16px;
-  transition: border-color 0.3s;
-  &:focus {
-    border-color: #4a90e2;
-    outline: none;
-  }
-`;
-
-const SelectField = styled.select`
-  padding: 10px;
-  border: 1px solid #e6e6e6;
-  border-radius: 5px;
-  font-size: 16px;
-  background-color: #fff;
-  transition: border-color 0.3s;
-  &:focus {
-    border-color: #4a90e2;
-    outline: none;
-  }
 `;
 
 const TextArea = styled.textarea`
   padding: 10px;
-  border: 1px solid #e6e6e6;
+  border: 1px solid #ccc;
   border-radius: 5px;
   font-size: 16px;
-  resize: none;
-  transition: border-color 0.3s;
-  &:focus {
-    border-color: #4a90e2;
-    outline: none;
-  }
-`;
-
-const DatePickerWrapper = styled.div`
-  .react-datepicker-wrapper {
-    width: 100%;
-  }
-  .react-datepicker__input-container input {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #e6e6e6;
-    border-radius: 5px;
-    font-size: 16px;
-    &:focus {
-      border-color: #4a90e2;
-      outline: none;
-    }
-  }
+  resize: vertical;
 `;
 
 const Button = styled.button`
-  padding: 10px;
+  padding: 10px 20px;
+  background-color: #4caf50;
+  color: white;
   border: none;
   border-radius: 5px;
-  background-color: #4a90e2;
-  color: white;
-  font-size: 18px;
   cursor: pointer;
-  transition: background-color 0.3s;
+  font-size: 16px;
   &:hover {
-    background-color: #357abd;
+    background-color: #45a049;
   }
 `;
 
-const ErrorMessage = styled.div`
-  color: red;
-  font-size: 12px;
-  margin-top: 5px;
+const CancelButton = styled(Button)`
+  background-color: #dc3545;
+  &:hover {
+    background-color: #c82333;
+  }
 `;
 
 const EventForm = ({ eventToEdit, clearEdit }) => {
-  const [event, setEvent] = useState({
-    eventName: '',
-    eventType: 'sports',
-    startDate: new Date(),
-    endDate: new Date(),
-    description: '',
-    handledBy: '',
-    organisation: '',
-    totalSubEvents: 0,
-  });
-  const [errors, setErrors] = useState({});
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { isAuthenticated } = useSelector(state => state.eventpro.auth);
+  const { isAuthenticated, token } = useSelector((state) => state.eventpro.auth);
+  const { loading, error } = useSelector((state) => state.eventpro.events);
+
+  const [formData, setFormData] = useState({
+    eventName: eventToEdit?.eventName || '',
+    eventType: eventToEdit?.eventType || '',
+    startDate: eventToEdit?.startDate ? new Date(eventToEdit.startDate).toISOString().split('T')[0] : '',
+    endDate: eventToEdit?.endDate ? new Date(eventToEdit.endDate).toISOString().split('T')[0] : '',
+    description: eventToEdit?.description || '',
+    handledBy: eventToEdit?.handledBy || '',
+    organisation: eventToEdit?.organisation || '',
+    totalSubEvents: eventToEdit?.totalSubEvents || 0,
+  });
 
   useEffect(() => {
     if (!isAuthenticated) {
+      console.log('EventForm.jsx - Not authenticated, redirecting to /event-form');
+      toast.error('Please log in to access this page.');
+      navigate('/event-form', { replace: true });
+    } else if (!token) {
+      console.log('EventForm.jsx - No token found, redirecting to /event-form');
+      toast.error('Session expired. Please log in again.');
       navigate('/event-form', { replace: true });
     }
-    if (eventToEdit) {
-      setEvent({
-        eventName: eventToEdit.eventName || '',
-        eventType: eventToEdit.eventType || 'sports',
-        startDate: new Date(eventToEdit.startDate) || new Date(),
-        endDate: new Date(eventToEdit.endDate) || new Date(),
-        description: eventToEdit.description || '',
-        handledBy: eventToEdit.handledBy || '',
-        organisation: eventToEdit.organisation || '',
-        totalSubEvents: eventToEdit.totalSubEvents || 0,
-      });
+    if (error) {
+      console.log('EventForm.jsx - Error:', error);
+      toast.error(error);
     }
-  }, [eventToEdit, isAuthenticated, navigate]);
-
-  const validateForm = () => {
-    const newErrors = {};
-    if (!event.eventName) newErrors.eventName = 'Event name is required';
-    if (!event.description) newErrors.description = 'Description is required';
-    if (!event.handledBy) newErrors.handledBy = 'Handled by is required';
-    if (!event.organisation) newErrors.organisation = 'Organisation is required';
-    if (!event.totalSubEvents || event.totalSubEvents < 0) newErrors.totalSubEvents = 'Total sub-events must be a non-negative number';
-    if (event.startDate > event.endDate) newErrors.endDate = 'End date must be after start date';
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+  }, [dispatch, isAuthenticated, error, navigate, token]);
 
   const handleChange = (e) => {
-    setEvent({ ...event, [e.target.name]: e.target.value });
-    setErrors({ ...errors, [e.target.name]: '' });
-  };
-
-  const handleDateChange = (date, name) => {
-    setEvent({ ...event, [name]: date });
-    setErrors({ ...errors, [name]: '' });
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validateForm()) {
-      toast.error('Please fix the form errors');
-      return;
-    }
     try {
+      if (!token) {
+        throw new Error('No token found');
+      }
+      setAuthToken(token);
+      console.log('EventForm.jsx - Submitting form with token:', token);
       if (eventToEdit) {
-        await dispatch(updateEvent({ ...event, _id: eventToEdit._id })).unwrap();
-        toast.success('Event updated successfully');
-        clearEdit();
+        await dispatch(updateEvent({ ...formData, _id: eventToEdit._id })).unwrap();
       } else {
-        await dispatch(addEvent(event)).unwrap();
-        toast.success('Event added successfully');
-        setEvent({
-          eventName: '',
-          eventType: 'sports',
-          startDate: new Date(),
-          endDate: new Date(),
-          description: '',
-          handledBy: '',
-          organisation: '',
-          totalSubEvents: 0,
-        });
-        navigate('/eventpro/list-events', { replace: true });
+        await dispatch(addEvent(formData)).unwrap();
       }
+      navigate('/eventpro/list-events');
     } catch (error) {
-      if (error === 'User is not authenticated') {
-        dispatch(logout());
-        navigate('/event-form', { replace: true });
-      }
-      toast.error(error || 'Failed to save event');
+      console.error('EventForm.jsx - Error submitting form:', error);
+      toast.error(error.message || 'Failed to save event');
     }
   };
 
   return (
-    <FormContainer>
-      <StyledForm onSubmit={handleSubmit}>
-        <FormGroup>
-          <Label>Event Name</Label>
-          <InputField
-            type="text"
-            name="eventName"
-            value={event.eventName}
-            onChange={handleChange}
-            placeholder="Enter event name"
-            required
-          />
-          {errors.eventName && <ErrorMessage>{errors.eventName}</ErrorMessage>}
-        </FormGroup>
-        <FormGroup>
-          <Label>Event Type</Label>
-          <SelectField name="eventType" value={event.eventType} onChange={handleChange}>
-            <option value="sports">Sports</option>
-            <option value="music">Music</option>
-            <option value="general">General</option>
-            <option value="children">Children</option>
-            <option value="school">School</option>
-          </SelectField>
-        </FormGroup>
-        <FormGroup>
-          <Label>Start Date</Label>
-          <DatePickerWrapper>
-            <DatePicker
-              selected={event.startDate}
-              onChange={(date) => handleDateChange(date, 'startDate')}
-              placeholderText="Select start date"
-              dateFormat="MMMM d, yyyy"
-              popperPlacement="bottom"
-            />
-          </DatePickerWrapper>
-        </FormGroup>
-        <FormGroup>
-          <Label>End Date</Label>
-          <DatePickerWrapper>
-            <DatePicker
-              selected={event.endDate}
-              onChange={(date) => handleDateChange(date, 'endDate')}
-              placeholderText="Select end date"
-              dateFormat="MMMM d, yyyy"
-              popperPlacement="bottom"
-            />
-          </DatePickerWrapper>
-          {errors.endDate && <ErrorMessage>{errors.endDate}</ErrorMessage>}
-        </FormGroup>
-        <FormGroup>
-          <Label>Description</Label>
-          <TextArea
-            name="description"
-            value={event.description}
-            onChange={handleChange}
-            placeholder="Enter event description"
-            required
-            rows="4"
-          />
-          {errors.description && <ErrorMessage>{errors.description}</ErrorMessage>}
-        </FormGroup>
-        <FormGroup>
-          <Label>Handled By</Label>
-          <InputField
-            type="text"
-            name="handledBy"
-            value={event.handledBy}
-            onChange={handleChange}
-            placeholder="Enter handler name"
-            required
-          />
-          {errors.handledBy && <ErrorMessage>{errors.handledBy}</ErrorMessage>}
-        </FormGroup>
-        <FormGroup>
-          <Label>Organisation</Label>
-          <InputField
-            type="text"
-            name="organisation"
-            value={event.organisation}
-            onChange={handleChange}
-            placeholder="Enter organisation"
-            required
-          />
-          {errors.organisation && <ErrorMessage>{errors.organisation}</ErrorMessage>}
-        </FormGroup>
-        <FormGroup>
-          <Label>Total Sub-events</Label>
-          <InputField
-            type="number"
-            name="totalSubEvents"
-            value={event.totalSubEvents}
-            onChange={handleChange}
-            placeholder="Enter total sub-events"
-            required
-            min="0"
-          />
-          {errors.totalSubEvents && <ErrorMessage>{errors.totalSubEvents}</ErrorMessage>}
-        </FormGroup>
-        <Button type="submit">{eventToEdit ? 'Update Event' : 'Add Event'}</Button>
-      </StyledForm>
-    </FormContainer>
+    <Form onSubmit={handleSubmit}>
+      <Input
+        type="text"
+        name="eventName"
+        value={formData.eventName}
+        onChange={handleChange}
+        placeholder="Event Name"
+        required
+      />
+      <Input
+        type="text"
+        name="eventType"
+        value={formData.eventType}
+        onChange={handleChange}
+        placeholder="Event Type"
+        required
+      />
+      <Input
+        type="date"
+        name="startDate"
+        value={formData.startDate}
+        onChange={handleChange}
+        required
+      />
+      <Input
+        type="date"
+        name="endDate"
+        value={formData.endDate}
+        onChange={handleChange}
+        required
+      />
+      <TextArea
+        name="description"
+        value={formData.description}
+        onChange={handleChange}
+        placeholder="Description"
+        rows="4"
+      />
+      <Input
+        type="text"
+        name="handledBy"
+        value={formData.handledBy}
+        onChange={handleChange}
+        placeholder="Handled By"
+      />
+      <Input
+        type="text"
+        name="organisation"
+        value={formData.organisation}
+        onChange={handleChange}
+        placeholder="Organisation"
+      />
+      <Input
+        type="number"
+        name="totalSubEvents"
+        value={formData.totalSubEvents}
+        onChange={handleChange}
+        placeholder="Total Sub-events"
+        min="0"
+      />
+      <Button type="submit" disabled={loading}>
+        {eventToEdit ? 'Update Event' : 'Add Event'}
+      </Button>
+      <CancelButton type="button" onClick={clearEdit}>
+        Cancel
+      </CancelButton>
+    </Form>
   );
-};
-
-EventForm.propTypes = {
-  eventToEdit: PropTypes.shape({
-    _id: PropTypes.string,
-    eventName: PropTypes.string,
-    eventType: PropTypes.string,
-    startDate: PropTypes.oneOfType([PropTypes.string, PropTypes.instanceOf(Date)]),
-    endDate: PropTypes.oneOfType([PropTypes.string, PropTypes.instanceOf(Date)]),
-    description: PropTypes.string,
-    handledBy: PropTypes.string,
-    organisation: PropTypes.string,
-    totalSubEvents: PropTypes.number,
-  }),
-  clearEdit: PropTypes.func.isRequired,
 };
 
 export default EventForm;
