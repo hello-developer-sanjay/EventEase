@@ -67,13 +67,9 @@ const EventForm = ({ eventToEdit, clearEdit }) => {
   });
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      console.log('EventForm.jsx - Not authenticated, redirecting to /event-form');
+    if (!isAuthenticated || !token) {
+      console.log('EventForm.jsx - Not authenticated or no token, redirecting to /event-form');
       toast.error('Please log in to access this page.');
-      navigate('/event-form', { replace: true });
-    } else if (!token) {
-      console.log('EventForm.jsx - No token found, redirecting to /event-form');
-      toast.error('Session expired. Please log in again.');
       navigate('/event-form', { replace: true });
     }
     if (error) {
@@ -103,7 +99,11 @@ const EventForm = ({ eventToEdit, clearEdit }) => {
       navigate('/eventpro/list-events');
     } catch (error) {
       console.error('EventForm.jsx - Error submitting form:', error);
-      toast.error(error.message || 'Failed to save event');
+      if (error === 'User is not authenticated') {
+        navigate('/event-form', { replace: true });
+      } else {
+        toast.error(error || 'Failed to save event');
+      }
     }
   };
 
