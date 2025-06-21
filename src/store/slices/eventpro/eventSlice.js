@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 import { toast } from 'react-toastify';
-import apiConfig from './shared/utils/apiConfig';
+import apiConfig from '../../../shared/utils/apiConfig';
 import { logout } from './authSlice';
 
 const initialState = {
