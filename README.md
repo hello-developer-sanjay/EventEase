@@ -116,7 +116,4 @@ npm run dev
 # Run frontend
 cd ../frontend
 npm start
----
 
-
-<img src="https://capsule-render.vercel.app/api?type=waving&color=0E75B6&height=120&section=footer" alt="Footer Banner" /> 
