@@ -1,139 +1,118 @@
-<img src="https://capsule-render.vercel.app/api?type=waving&color=0E75B6&height=120&section=header&text=The%20Unified%20Event%20Manager&fontSize=38&fontColor=FFFFFF&animation=fadeIn" alt="Header" />
+<!-- Banner -->
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0E75B6&height=120&section=header&text=EventEase:%20Ultimate%20Event%20Management%20Software%20for%202025&fontSize=32&fontColor=FFFFFF" alt="EventEase Banner" />
 
 <p align="center">
-  <img src="https://mys3resources.s3.ap-south-1.amazonaws.com/LIC/eventlogo.png" width="200" alt="Unified Event Manager Logo"/>
+  <img src="https://mys3resources.s3.ap-south-1.amazonaws.com/LIC/eventlogo.png" width="150" alt="EventEase Logo"/>
+</p>
+
+<p align="center">
+  <img src="https://readme-typing-svg.herokuapp.com?font=Fira+Code&size=22&pause=700&color=0E75B6&center=true&vCenter=true&width=800&lines=Plan+Smarter,+Collaborate+Better,+Execute+Flawlessly;Real-Time+Team+Management+%7C+Calendar+Sync+Coming+Soon;Unified+Platform+for+Modern+Event+Needs" alt="Typing SVG" />
 </p>
 
 ---
 
-## 🧭 Overview
+## 🚀 EventEase: Ultimate Event Management Software for 2025
 
-**The Unified Event Manager** is a comprehensive event planning platform built for modern teams. Combining real-time collaboration tools with upcoming smart scheduling powered by Google Calendar, this software helps you manage webinars, conferences, concerts, and more—all from a single intuitive interface.
+**EventEase** is a modern, feature-rich platform for managing events — from small meetups to large conferences. Built with the MERN stack and powered by real-time collaboration tools, it unifies two previously separate tools (EventEase and EventPro) into a seamless, scalable, and cloud-optimized event planning ecosystem.
 
-> ⚡ Built using the MERN Stack and deployed across cloud services for optimal scalability and performance.
-
----
-
-## 🧠 Key Highlights
-
-- 🧭 Unified two standalone platforms into one seamless experience.
-- 🔁 Integrated **Google Calendar Sync** for smart scheduling (coming soon).
-- 🔒 Secure authentication using token-based and OAuth logins.
-- 💬 Real-time team collaboration: task sharing, dashboards, and updates.
-- 📱 Fully responsive across devices.
-- 🌐 SEO-ready with structured metadata and Open Graph.
+> 💡 This unified version includes event scheduling, team collaboration, role-based access, and is optimized for speed, responsiveness, and future integrations like Google Calendar sync.
 
 ---
 
-## ✨ Core Features
-
-| Feature | Description |
-|--------|-------------|
-| **🔐 Authentication** | Secure login with email/password and Google OAuth |
-| **📅 Calendar View** | Interactive event calendar with sync-ready backend |
-| **👥 Team Collaboration** | Shared dashboards, real-time task views |
-| **📝 Event Management** | Create, update, delete events with live feedback |
-| **🎯 Role-Based Access** | Admin and user interfaces for control and simplicity |
-| **📊 Dashboard Views** | Track all event data from a central interface |
-| **📲 Responsive Design** | Mobile-first layout with smooth animations |
-| **☁️ Cloud Deployed** | Frontend (Vercel), Backend (Render), Storage (AWS) |
-
----
-
-## 🎥 Quick Preview
+## 📸 Screenshots
 
 <p align="center">
-  <img src="https://readme-typing-svg.herokuapp.com?font=Fira+Code&size=22&pause=700&color=0E75B6&center=true&vCenter=true&width=800&lines=All-in-One+Event+Management+Solution;Real-Time+Team+Collaboration;Upcoming+Google+Calendar+Integration;Smart+Scheduling+Features;Seamless+Webinars+%7C+Meetups+%7C+Conferences" alt="Typing Effect" />
+  <img src="https://mys3resources.s3.ap-south-1.amazonaws.com/LIC/preview-demo.gif" width="90%" alt="Platform Preview"/>
 </p>
 
 ---
 
-## 🛠️ Built With
+## ✨ Features at a Glance
 
-### 🖥️ Frontend
-![React](https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react)
-![Redux](https://img.shields.io/badge/Redux-764ABC?style=for-the-badge&logo=redux)
-![Styled Components](https://img.shields.io/badge/Styled--Components-db7093?style=for-the-badge&logo=styled-components)
-
-### ⚙️ Backend
-![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=node.js)
-![Express](https://img.shields.io/badge/Express.js-000000?style=for-the-badge&logo=express)
-![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb)
-
-### ☁️ Cloud & APIs
-![Vercel](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel)
-![Render](https://img.shields.io/badge/Render-46E3B7?style=for-the-badge&logo=render)
-![Google Calendar API](https://img.shields.io/badge/Google--Calendar-4285F4?style=for-the-badge&logo=googlecalendar)
+| EventEase Module | EventPro Module |
+|------------------|-----------------|
+| 🔐 Google & Email Auth | 🔐 Google & Email Auth |
+| 📅 Smart Scheduling (Coming Soon) | 📆 Create / Edit / Delete Events |
+| 🔄 Google Calendar Sync | 📊 Paginated Event Table |
+| 🧑‍🤝‍🧑 Real-Time Collaboration | 🎛️ Admin & User Dashboards |
+| 💬 Toast Feedback | 🎨 Modern UI with Styled Components |
 
 ---
 
-## 🔗 Live Demo
+## 🛠 Tech Stack
 
-🎯 Try it now: [https://event-manager-two.vercel.app](https://event-manager-two.vercel.app)
+**Frontend**  
+![React](https://img.shields.io/badge/React-61DAFB?style=flat&logo=react)
+![Redux Toolkit](https://img.shields.io/badge/Redux_Toolkit-764ABC?style=flat&logo=redux)
+![Styled Components](https://img.shields.io/badge/Styled--Components-DB7093?style=flat&logo=styled-components)
 
----
+**Backend**  
+![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat&logo=node.js)
+![Express](https://img.shields.io/badge/Express.js-000000?style=flat&logo=express)
+![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=flat&logo=mongodb)
 
-## 📁 Folder Structure
-
-eventease-eventpro/
-│
-├── frontend/
-│ ├── pages/
-│ ├── components/
-│ └── styles/
-│
-├── backend/
-│ ├── routes/
-│ ├── controllers/
-│ └── models/
-│
-├── .env.example
-└── README.md
-
+**Cloud / API**  
+![Vercel](https://img.shields.io/badge/Vercel-000?style=flat&logo=vercel)
+![Render](https://img.shields.io/badge/Render-4DABF7?style=flat&logo=render)
+![Google Calendar API](https://img.shields.io/badge/Google_Calendar_API-4285F4?style=flat&logo=googlecalendar)
+![AWS S3](https://img.shields.io/badge/AWS_S3-FF9900?style=flat&logo=amazonaws)
 
 ---
 
-## ⚡ Quick Start
+## 📍 Live Links
+
+- 🌐 Website: [https://event-manager-two.vercel.app](https://event-manager-two.vercel.app)  
+- 🛠️ API: [https://eventmanager-api-19july.onrender.com/api](https://eventmanager-api-19july.onrender.com/api)  
+- 💻 GitHub: [https://github.com/SanjayPatidar12/eventease-eventpro](https://github.com/SanjayPatidar12/eventease-eventpro)
+
+---
+
+## 🧩 Unified Platform Structure
+
+**EventEase**
+- `/eventease/login` – Login with email or Google
+- `/eventease/create-event` – Add new events
+- `/eventease/sync-google-calendar` – Calendar integration (coming soon)
+- `/eventease` – Explore upcoming scheduling features
+
+**EventPro**
+- `/eventpro/add-event` – Add/Edit/Delete events
+- `/eventpro/list-events` – Paginated view
+- `/eventpro/dashboard` – User dashboard
+- `/eventpro/admin-dashboard` – Admin overview
+- `/eventpro/forgot-password` – Password recovery
+- Form validations and route protections
+
+---
+
+## ⚙️ Local Setup
 
 ```bash
-# 1. Clone the repository
+# Clone repo
 git clone https://github.com/SanjayPatidar12/eventease-eventpro.git
-
-# 2. Navigate to the folder
 cd eventease-eventpro
 
-# 3. Install dependencies
+# Install frontend dependencies
+cd frontend
 npm install
 
-# 4. Set environment variables
-touch .env
-# Add: REACT_APP_API_URL=https://your-backend-api-url
+# Install backend dependencies
+cd ../backend
+npm install
 
-# 5. Run locally
+# Setup frontend .env
+REACT_APP_API_URL=https://eventmanager-api-19july.onrender.com/api
+
+# Setup backend .env
+MONGO_URI=<your_mongo_url>
+JWT_SECRET=<your_jwt_secret>
+SESSION_SECRET=<your_session_secret>
+GOOGLE_CLIENT_ID=<your_google_client_id>
+GOOGLE_CLIENT_SECRET=<your_google_client_secret>
+
+# Run backend
+npm run dev
+
+# Run frontend
+cd ../frontend
 npm start
-🔍 SEO & Accessibility Ready
-Optimized <title>, <meta> tags
-
-JSON-LD schema for search engines
-
-Lazy-loaded assets for faster performance
-
-Toast notifications and responsive interactions
-
-🔐 Authentication Routes
-Feature	Route
-Email Login	/eventease/login
-Google OAuth	/event-form
-Admin Access	/admin-dashboard
-Password Recovery	/eventpro/forgot-password
-
-📈 GitHub Stats
-<p align="center"> <img src="https://github-readme-stats.vercel.app/api?username=SanjayPatidar12&show_icons=true&theme=radical&count_private=true" width="400"/> <img src="https://github-readme-streak-stats.herokuapp.com/?user=SanjayPatidar12&theme=radical" width="400"/> </p>
-
-📣 Upcoming Features
-🚧 Smart Scheduling (In Development)
-🚀 Real-Time Notifications
-📦 Event Export/Import Functionality
-📲 PWA Support & Offline Mode
-
-<img src="https://capsule-render.vercel.app/api?type=waving&color=0E75B6&height=120&section=footer" alt="Footer" /> 
