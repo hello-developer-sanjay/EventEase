@@ -1,23 +1,54 @@
 import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import EventTable from '../components/EventTable';
 import styled from 'styled-components';
+import setAuthToken from '../utils/setAuthToken';
+import { toast } from 'react-toastify';
 
 const ListEventsPage = () => {
   const navigate = useNavigate();
-  const { isAuthenticated } = useSelector((state) => state.eventpro.auth);
+  const location = useLocation();
+  const { isAuthenticated, user } = useSelector((state) => state.eventpro.auth);
+
+  const searchParams = new URLSearchParams(location.search);
+  const userParam = searchParams.get('user');
+  const userPlatform = searchParams.get('platform');
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      navigate('/eventpro/login');
+    if (userParam && userPlatform === 'eventpro') {
+      try {
+        const parsedUser = JSON.parse(decodeURIComponent(userParam));
+        const token = localStorage.getItem('eventproToken');
+        if (parsedUser._id && parsedUser.email && token && parsedUser.platform === 'eventpro') {
+          setAuthToken(token);
+          console.log('ListEventsPage.jsx - User verified from query:', parsedUser);
+        } else {
+          throw new Error('Invalid user data');
+        }
+      } catch (error) {
+        console.error('ListEventsPage.jsx - Error verifying user:', error);
+        toast.error('Invalid session. Please log in again.');
+        navigate('/event-form', { replace: true });
+      }
     }
-  }, [isAuthenticated, navigate]);
+
+    if (!isAuthenticated) {
+      console.log('ListEventsPage.jsx - Not authenticated, redirecting to /event-form');
+      toast.error('Please log in to access this page.');
+      navigate('/event-form', { replace: true });
+    }
+  }, [isAuthenticated, navigate, location.search]);
+
+  const handleAddEvent = () => {
+    const userParam = encodeURIComponent(JSON.stringify(user));
+    navigate(`/eventpro/add-event?platform=eventpro&user=${userParam}`);
+  };
 
   return (
     <PageWrapper>
       <Header>
-        <Button onClick={() => navigate('/eventpro/add-event')}>Add Event</Button>
+        <Button onClick={handleAddEvent}>Add Event</Button>
       </Header>
       <EventTable />
     </PageWrapper>
@@ -50,7 +81,7 @@ const Button = styled.button`
   border: none;
   border-radius: 5px;
   cursor: pointer;
-  font-size: 16px; /* Fixed typo */
+  font-size: 16px;
   &:hover {
     background-color: #45a049;
   }
