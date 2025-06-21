@@ -1,4 +1,3 @@
-import React from 'react';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
 
@@ -219,8 +218,8 @@ const FooterBottom = styled.div`
 `;
 
 const Footer = () => {
-  const metaTitle = 'Event Manager: Premier Event Planning Software for 2025';
-  const pageUrl = 'https://eventpro.com'; // Replace with your actual EventPro URL
+  const metaTitle = 'EventEase: Ultimate Event Management Software for 2025';
+  const pageUrl = 'https://eventunified.vercel.app'; 
 
   return (
     <FooterContainer>
