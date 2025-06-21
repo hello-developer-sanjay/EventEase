@@ -55,19 +55,20 @@ const EventTable = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      console.log('EventTable.jsx - Not authenticated, redirecting to /event-form');
-      navigate('/event-form', { replace: true });
-    } else if (!token) {
-      console.log('EventTable.jsx - No token found, redirecting to /event-form');
-      toast.error('Session expired. Please log in again.');
+    if (!isAuthenticated || !token) {
+      console.log('EventTable.jsx - Not authenticated or no token, redirecting to /event-form');
+      toast.error('Please log in to access this page.');
       navigate('/event-form', { replace: true });
     } else {
       setAuthToken(token);
       console.log('EventTable.jsx - Fetching events with token:', token);
       dispatch(fetchEvents()).catch(error => {
         console.error('EventTable.jsx - fetchEvents failed:', error);
-        toast.error('Failed to load events. Please try again.');
+        if (error === 'User is not authenticated') {
+          navigate('/event-form', { replace: true });
+        } else {
+          toast.error('Failed to load events. Please try again.');
+        }
       });
     }
     if (error) {
