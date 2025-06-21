@@ -68,7 +68,7 @@ const Icon = styled.div`
 // Styled Main Area
 const MainContent = styled.div`
   margin-left: 40px;
-  padding: 10px 20px;
+  padding: 1px 1px;
   transition: margin-left 0.3s ease;
   display: flex;
   flex-direction: column;
