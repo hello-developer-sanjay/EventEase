@@ -6,7 +6,6 @@ import { Helmet } from 'react-helmet';
 import  LazyLoadComponent  from 'react-lazy-load';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-
 const Container = styled.div`
   --primary-color: #E63946;
   --secondary-color: #1DE9B6;
