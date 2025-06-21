@@ -67,6 +67,7 @@ const EventForm = ({ eventToEdit, clearEdit }) => {
   });
 
   useEffect(() => {
+    console.log('EventForm.jsx - eventToEdit:', eventToEdit);
     if (!isAuthenticated || !token) {
       console.log('EventForm.jsx - Not authenticated or no token, redirecting to /event-form');
       toast.error('Please log in to access this page.');
@@ -92,17 +93,21 @@ const EventForm = ({ eventToEdit, clearEdit }) => {
       setAuthToken(token);
       console.log('EventForm.jsx - Submitting form with token:', token);
       if (eventToEdit) {
+        if (!eventToEdit._id) {
+          throw new Error('Missing event ID for update');
+        }
+        console.log('EventForm.jsx - Updating event with ID:', eventToEdit._id);
         await dispatch(updateEvent({ ...formData, _id: eventToEdit._id })).unwrap();
       } else {
         await dispatch(addEvent(formData)).unwrap();
       }
       navigate('/eventpro/list-events');
     } catch (error) {
-      console.error('EventForm.jsx - Error submitting form:', error);
-      if (error === 'User is not authenticated') {
+      console.error('EventForm.jsx - Error submitting form:', error.message);
+      if (error.message === 'User is not authenticated' || error.message === 'Missing event ID for update') {
         navigate('/event-form', { replace: true });
       } else {
-        toast.error(error || 'Failed to save event');
+        toast.error(error.message || 'Failed to save event');
       }
     }
   };
