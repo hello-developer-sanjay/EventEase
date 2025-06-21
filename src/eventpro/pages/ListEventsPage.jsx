@@ -1,10 +1,18 @@
-import React from 'react';
-import EventTable from '../components/EventTable';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import EventTable from '../components/EventTable';
 import styled from 'styled-components';
 
 const ListEventsPage = () => {
   const navigate = useNavigate();
+  const { isAuthenticated } = useSelector((state) => state.eventpro.auth);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigate('/eventpro/login');
+    }
+  }, [isAuthenticated, navigate]);
 
   return (
     <PageWrapper>
@@ -42,7 +50,7 @@ const Button = styled.button`
   border: none;
   border-radius: 5px;
   cursor: pointer;
-  font-size:4px;
+  font-size: 16px; /* Fixed typo */
   &:hover {
     background-color: #45a049;
   }
