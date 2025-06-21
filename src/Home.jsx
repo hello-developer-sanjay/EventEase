@@ -198,7 +198,7 @@ const Home = () => {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      toast.error('🚧 EventEase is under development. Switch to EventPro for seamless event management!', {
+      toast.error('🚧 Smart Scheduling is under development. Explore Team Collaboration for seamless event management!', {
         position: 'top-center',
         autoClose: 5000,
         hideProgressBar: false,
@@ -213,14 +213,14 @@ const Home = () => {
   return (
     <Container>
       <Helmet>
-        <title>Event Manager: Premier Event Planning Software for 2025</title>
+        <title>EventEase: Ultimate Event Management Software for 2025</title>
         <meta
           name="description"
-          content="Event Manager delivers cutting-edge event planning with EventPro, the ultimate event management software for seamless scheduling and collaboration."
+          content="EventEase is the premier event management software, offering real-time team collaboration and upcoming smart scheduling with Google Calendar integration."
         />
         <meta
           name="keywords"
-          content="event management software, event planning platform, EventPro, event organizer tool, event scheduling, event management app"
+          content="EventEase, event management software, event planning platform, smart scheduling, team collaboration, event organizer tool, event management app"
         />
         <meta name="author" content="Sanjay Patidar" />
         <script type="application/ld+json">
@@ -228,7 +228,7 @@ const Home = () => {
             {
               "@context": "https://schema.org",
               "@type": "SoftwareApplication",
-              "name": "Event Manager",
+              "name": "EventEase",
               "operatingSystem": "Web",
               "applicationCategory": "EventManagementSoftware",
               "offers": {
@@ -236,7 +236,7 @@ const Home = () => {
                 "price": "0",
                 "priceCurrency": "USD"
               },
-              "description": "Event Manager with EventPro offers robust tools for event planning, scheduling, and collaboration.",
+              "description": "EventEase provides robust tools for event planning, with real-time team collaboration and upcoming smart scheduling via Google Calendar.",
               "author": {
                 "@type": "Person",
                 "name": "Sanjay Patidar"
@@ -247,10 +247,10 @@ const Home = () => {
       </Helmet>
       <HeroSection>
         <Title>
-          Master Your Events with <span className="highlight">EventPro</span>
+          Plan Smarter with <span className="highlight">EventEase</span>
         </Title>
         <Subtitle>
-          Experience the future of event management with our intuitive platform. Plan, track, and execute events effortlessly with EventPro’s powerful tools.
+          Discover the ultimate event management platform. Collaborate in real-time and get ready for smart scheduling with EventEase’s powerful tools.
         </Subtitle>
       </HeroSection>
       <CardContainer>
@@ -261,9 +261,9 @@ const Home = () => {
           whileHover={{ scale: 1.05 }}
           onClick={() => navigate('/eventease')}
         >
-          <CardTitle>EventEase</CardTitle>
+          <CardTitle>Smart Scheduling</CardTitle>
           <CardDescription>
-            Coming soon with Google Calendar integration for effortless event scheduling and management.
+            Coming soon with Google Calendar integration, automated reminders, and intuitive scheduling tools.
           </CardDescription>
         </Card>
         <Card
@@ -273,19 +273,19 @@ const Home = () => {
           whileHover={{ scale: 1.05 }}
           onClick={() => navigate('/eventpro')}
         >
-          <CardTitle>EventPro</CardTitle>
+          <CardTitle>Team Collaboration</CardTitle>
           <CardDescription>
-            The ultimate event management platform for rapid planning, real-time collaboration, and seamless execution.
+            Streamline teamwork with real-time task management, shared dashboards, and seamless communication.
           </CardDescription>
         </Card>
       </CardContainer>
       <SEOText>
-        <h2>Why EventPro is the Best Event Management Software</h2>
+        <h2>Why EventEase is the Top Event Management Software</h2>
         <p>
-          Event Manager, powered by <strong>EventPro</strong>, is the leading event planning platform for 2025. Designed by Sanjay Patidar, our software simplifies every aspect of event organization, from scheduling to collaboration. Whether you’re managing corporate conferences, weddings, or community events, EventPro offers a user-friendly interface, real-time updates, and robust features to ensure success. Unlike other event management apps, EventPro prioritizes speed and reliability, making it the go-to choice for event organizers worldwide.
+          <strong>EventEase</strong>, crafted by Sanjay Patidar, is the leading event management software for 2025, designed to revolutionize event planning. With robust team collaboration tools, EventEase enables organizers to manage tasks, share dashboards, and communicate in real-time, ensuring seamless execution for corporate conferences, weddings, or community events. The platform’s user-friendly interface and real-time updates make it the preferred choice for event professionals worldwide.
         </p>
         <p>
-          Our platform stands out for its intuitive design and powerful functionality. Start planning your next event with EventPro and discover why it’s the preferred event scheduling tool for professionals. EventEase is under development, but EventPro is ready to handle all your event management needs today.
+          EventEase is set to enhance its capabilities with upcoming smart scheduling features, including Google Calendar integration and automated reminders, currently in development. For now, leverage EventEase’s powerful collaboration tools to streamline your workflows. Trusted by thousands, EventEase combines speed, reliability, and innovation, making it the ultimate event management platform. Join the EventEase community today and transform how you plan events.
         </p>
       </SEOText>
       <LazyLoadComponent>
