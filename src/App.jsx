@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from
 import { useDispatch, useSelector } from 'react-redux';
 import { setAuth as setEventEaseAuth } from './store/slices/eventease/authSlice';
 import { setAuth as setEventProAuth, loadUser, logout } from './store/slices/eventpro/authSlice';
+import setAuthToken from './utils/setAuthToken';
 import Layout from './shared/components/Layout';
 import ErrorBoundary from './shared/components/ErrorBoundary';
 import { toast } from 'react-toastify';
@@ -56,6 +57,19 @@ const App = () => {
       return;
     }
 
+    // Set token for API requests
+    if (platform === 'eventpro' && proAuthenticated) {
+      const token = localStorage.getItem('eventproToken');
+      if (token) {
+        setAuthToken(token);
+      }
+    } else if (platform === 'eventease' && easeAuthenticated) {
+      const token = localStorage.getItem('eventeaseToken');
+      if (token) {
+        setAuthToken(token);
+      }
+    }
+
     // Handle user query parameter from backend redirect
     if (userParam && userPlatform) {
       try {
@@ -82,12 +96,14 @@ const App = () => {
         if (platform === 'eventpro') {
           localStorage.setItem('eventproToken', token);
           localStorage.setItem('eventproUser', JSON.stringify(parsedUser));
+          setAuthToken(token);
           dispatch(setEventProAuth({ user: parsedUser, token }));
           dispatch(loadUser()).catch(error => {
             console.error('App.jsx - loadUser failed:', error);
             dispatch(logout());
             localStorage.removeItem('eventproToken');
             localStorage.removeItem('eventproUser');
+            setAuthToken(null);
             toast.error('Invalid session. Please log in again.');
             navigate('/event-form', { replace: true });
           });
@@ -95,6 +111,7 @@ const App = () => {
         } else if (platform === 'eventease') {
           localStorage.setItem('eventeaseToken', token);
           localStorage.setItem('eventeaseUser', JSON.stringify(parsedUser));
+          setAuthToken(token);
           dispatch(setEventEaseAuth({ user: parsedUser, token }));
           navigate(parsedUser.role === 'admin' ? '/eventpro/admin-dashboard' : '/eventease', { replace: true });
         }
@@ -106,10 +123,12 @@ const App = () => {
           dispatch(logout());
           localStorage.removeItem('eventproToken');
           localStorage.removeItem('eventproUser');
+          setAuthToken(null);
           navigate('/event-form', { replace: true });
         } else {
           localStorage.removeItem('eventeaseToken');
           localStorage.removeItem('eventeaseUser');
+          setAuthToken(null);
           navigate('/eventease/login', { replace: true });
         }
         return;
@@ -125,6 +144,7 @@ const App = () => {
             const user = JSON.parse(localStorage.getItem('eventeaseUser') || '{}');
             const token = localStorage.getItem('eventeaseToken');
             if (user._id && user.email && token && user.platform === 'eventease') {
+              setAuthToken(token);
               dispatch(setEventEaseAuth({ user, token }));
               console.log('App.jsx - Restored EventEase auth');
             } else {
@@ -134,6 +154,7 @@ const App = () => {
             console.error('App.jsx - Error restoring EventEase auth:', error);
             localStorage.removeItem('eventeaseToken');
             localStorage.removeItem('eventeaseUser');
+            setAuthToken(null);
             navigate('/eventease/login', { replace: true });
           }
         } else {
@@ -152,18 +173,9 @@ const App = () => {
             const user = JSON.parse(localStorage.getItem('eventproUser') || '{}');
             const token = localStorage.getItem('eventproToken');
             if (user._id && user.email && token && user.platform === 'eventpro') {
+              setAuthToken(token);
               dispatch(setEventProAuth({ user, token }));
-              // Only call loadUser if not already authenticated
-              if (!proAuthenticated) {
-                dispatch(loadUser()).catch(error => {
-                  console.error('App.jsx - loadUser failed:', error);
-                  dispatch(logout());
-                  localStorage.removeItem('eventproToken');
-                  localStorage.removeItem('eventproUser');
-                  toast.error('Invalid session. Please log in again.');
-                  navigate('/event-form', { replace: true });
-                });
-              }
+              console.log('App.jsx - Restored EventPro auth');
             } else {
               throw new Error('Invalid EventPro user data');
             }
@@ -172,6 +184,7 @@ const App = () => {
             dispatch(logout());
             localStorage.removeItem('eventproToken');
             localStorage.removeItem('eventproUser');
+            setAuthToken(null);
             navigate('/event-form', { replace: true });
           }
         } else {
@@ -185,7 +198,7 @@ const App = () => {
   useEffect(() => {
     console.log('App.jsx - Initializing');
     handleAuth();
-  }, [location.pathname, location.search]); // Removed proLoading, easeLoading to avoid redundant calls
+  }, [location.pathname, location.search]);
 
   return (
     <ErrorBoundary>
