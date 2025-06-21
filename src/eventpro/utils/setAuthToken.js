@@ -9,5 +9,4 @@ const setAuthToken = (token) => {
     console.log('setAuthToken: Token removed from Axios headers');
   }
 };
-
 export default setAuthToken;
