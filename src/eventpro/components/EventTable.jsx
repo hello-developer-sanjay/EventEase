@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { deleteEvent, fetchEvents } from '../../store/slices/eventpro/eventSlice';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import DataTable from 'react-data-table-component';
 import { Helmet } from 'react-helmet';
 import styled from 'styled-components';
@@ -49,37 +49,11 @@ const DeleteButton = styled(ActionButton)`
 
 const EventTable = () => {
   const events = useSelector((state) => state.eventpro.events.events || []);
-  const { isAuthenticated, user } = useSelector((state) => state.eventpro.auth);
+  const { isAuthenticated } = useSelector((state) => state.eventpro.auth);
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const location = useLocation();
 
   useEffect(() => {
-    const searchParams = new URLSearchParams(location.search);
-    const userParam = searchParams.get('user');
-    const userPlatform = searchParams.get('platform');
-
-    if (userParam && userPlatform === 'eventpro') {
-      try {
-        const parsedUser = JSON.parse(decodeURIComponent(userParam));
-        const token = localStorage.getItem('eventproToken');
-        if (parsedUser._id && parsedUser.email && token && parsedUser.platform === 'eventpro') {
-          setAuthToken(token);
-          console.log('EventTable.jsx - User verified from query:', parsedUser);
-        } else {
-          throw new Error('Invalid user data');
-        }
-      } catch (error) {
-        console.error('EventTable.jsx - Error verifying user:', error);
-        dispatch(logout());
-        localStorage.removeItem('eventproToken');
-        localStorage.removeItem('eventproUser');
-        setAuthToken(null);
-        toast.error('Invalid session. Please log in again.');
-        navigate('/event-form', { replace: true });
-      }
-    }
-
     if (!isAuthenticated) {
       console.log('EventTable.jsx - Not authenticated, redirecting to /event-form');
       navigate('/event-form', { replace: true });
@@ -96,7 +70,7 @@ const EventTable = () => {
         navigate('/event-form', { replace: true });
       }
     }
-  }, [dispatch, isAuthenticated, navigate, location.search]);
+  }, [dispatch, isAuthenticated, navigate]);
 
   const handleDelete = async (eventId) => {
     if (window.confirm('Are you sure you want to delete this event?')) {
@@ -111,8 +85,7 @@ const EventTable = () => {
   };
 
   const handleEdit = (event) => {
-    const userParam = encodeURIComponent(JSON.stringify(user));
-    navigate(`/eventpro/add-event/${event._id}?platform=eventpro&user=${userParam}`, { state: { eventToEdit: event } });
+    navigate(`/eventpro/add-event/${event._id}`, { state: { eventToEdit: event } });
   };
 
   const columns = [
