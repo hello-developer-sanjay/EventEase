@@ -11,6 +11,7 @@ import { Navigate } from 'react-router-dom';
 
 // Home Page
 import Home from './Home';
+import Footer from './Footer';
 
 // EventEase Pages and Components
 import Calendar from './eventease/components/Calendar';
@@ -241,6 +242,8 @@ const App = () => {
           <Route path="/eventpro/admin-dashboard" element={proAuthenticated && proUser?.role === 'admin' ? <Dashboard /> : <Navigate to="/event-form" replace />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+                <Footer/>
+
       </Layout>
     </ErrorBoundary>
   );
