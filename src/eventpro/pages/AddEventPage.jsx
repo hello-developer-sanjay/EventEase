@@ -1,18 +1,54 @@
 import styled from 'styled-components';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import EventForm from '../components/EventForm';
+import setAuthToken from '../utils/setAuthToken';
+import { toast } from 'react-toastify';
 
 const AddEventPage = () => {
   const location = useLocation();
-  const eventToEdit = location.state?.eventToEdit || null;
   const navigate = useNavigate();
+  const { isAuthenticated, user } = useSelector((state) => state.eventpro.auth);
+  const eventToEdit = location.state?.eventToEdit || null;
 
-  const clearEdit = () => navigate('/eventpro/dashboard');
+  const searchParams = new URLSearchParams(location.search);
+  const userParam = searchParams.get('user');
+  const userPlatform = searchParams.get('platform');
+
+  if (!isAuthenticated) {
+    console.log('AddEventPage.jsx - Not authenticated, redirecting to /event-form');
+    toast.error('Please log in to access this page.');
+    navigate('/event-form', { replace: true });
+    return null;
+  }
+
+  if (userParam && userPlatform === 'eventpro') {
+    try {
+      const parsedUser = JSON.parse(decodeURIComponent(userParam));
+      const token = localStorage.getItem('eventproToken');
+      if (parsedUser._id && parsedUser.email && token && parsedUser.platform === 'eventpro') {
+        setAuthToken(token);
+        console.log('AddEventPage.jsx - User verified from query:', parsedUser);
+      } else {
+        throw new Error('Invalid user data');
+      }
+    } catch (error) {
+      console.error('AddEventPage.jsx - Error verifying user:', error);
+      toast.error('Invalid session. Please log in again.');
+      navigate('/event-form', { replace: true });
+      return null;
+    }
+  }
+
+  const clearEdit = () => {
+    const userParam = encodeURIComponent(JSON.stringify(user));
+    navigate(`/eventpro/dashboard?platform=eventpro&user=${userParam}`);
+  };
 
   return (
     <PageWrapper>
       <Header>
-        <Button onClick={() => navigate('/eventpro/dashboard')}>View Events</Button>
+        <Button onClick={() => clearEdit()}>View Events</Button>
       </Header>
       <Content>
         <EventForm eventToEdit={eventToEdit} clearEdit={clearEdit} />
