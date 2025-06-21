@@ -34,10 +34,10 @@ const App = () => {
   const { isAuthenticated: proAuthenticated, user: proUser, loading: proLoading } = useSelector(state => state.eventpro.auth);
 
   const getPlatform = () => {
-    if (location.pathname === '/') return null; // No platform for root
+    if (location.pathname === '/') return null;
     if (location.pathname.startsWith('/eventpro')) return 'eventpro';
     if (location.pathname.startsWith('/eventease')) return 'eventease';
-    return null; // No platform for other routes
+    return null;
   };
 
   const handleAuth = () => {
@@ -52,7 +52,6 @@ const App = () => {
     console.log('App.jsx - Query platform:', userPlatform);
     console.log('App.jsx - Redux state:', { easeAuthenticated, proAuthenticated, proUser });
 
-    // Skip auth checks for root or non-platform routes
     if (platform === null) {
       return;
     }
@@ -62,11 +61,11 @@ const App = () => {
       try {
         const parsedUser = JSON.parse(decodeURIComponent(userParam));
         const token = parsedUser.token;
-        if (!parsedUser._id || !parsedUser.email || !token) {
+        if (!parsedUser._id || !parsedUser.email || !token || parsedUser.platform !== userPlatform) {
           throw new Error('Invalid user data');
         }
-        if (parsedUser.platform !== userPlatform || userPlatform !== platform) {
-          console.error('App.jsx - Platform mismatch:', { userPlatform: parsedUser.platform, queryPlatform: userPlatform, detectedPlatform: platform });
+        if (userPlatform !== platform) {
+          console.error('App.jsx - Platform mismatch:', { userPlatform, detectedPlatform: platform });
           toast.error('Platform mismatch. Please log in again.');
           if (platform === 'eventpro') {
             dispatch(logout());
@@ -92,14 +91,14 @@ const App = () => {
             toast.error('Invalid session. Please log in again.');
             navigate('/event-form', { replace: true });
           });
-          navigate('/eventpro/dashboard', { replace: true }); // Redirect to dashboard after successful auth
+          navigate('/eventpro/dashboard', { replace: true });
         } else if (platform === 'eventease') {
           localStorage.setItem('eventeaseToken', token);
           localStorage.setItem('eventeaseUser', JSON.stringify(parsedUser));
           dispatch(setEventEaseAuth({ user: parsedUser, token }));
           navigate(parsedUser.role === 'admin' ? '/eventpro/admin-dashboard' : '/eventease', { replace: true });
         }
-        return; // Exit after handling query parameter
+        return;
       } catch (error) {
         console.error('App.jsx - Error parsing user:', error);
         toast.error('Invalid user data');
@@ -141,7 +140,7 @@ const App = () => {
           navigate('/eventease/login', { replace: true });
         }
       }
-      return; // Exit to prevent eventpro checks
+      return;
     }
 
     // Eventpro authentication check
@@ -154,14 +153,17 @@ const App = () => {
             const token = localStorage.getItem('eventproToken');
             if (user._id && user.email && token && user.platform === 'eventpro') {
               dispatch(setEventProAuth({ user, token }));
-              dispatch(loadUser()).catch(error => {
-                console.error('App.jsx - loadUser failed:', error);
-                dispatch(logout());
-                localStorage.removeItem('eventproToken');
-                localStorage.removeItem('eventproUser');
-                toast.error('Invalid session. Please log in again.');
-                navigate('/event-form', { replace: true });
-              });
+              // Only call loadUser if not already authenticated
+              if (!proAuthenticated) {
+                dispatch(loadUser()).catch(error => {
+                  console.error('App.jsx - loadUser failed:', error);
+                  dispatch(logout());
+                  localStorage.removeItem('eventproToken');
+                  localStorage.removeItem('eventproUser');
+                  toast.error('Invalid session. Please log in again.');
+                  navigate('/event-form', { replace: true });
+                });
+              }
             } else {
               throw new Error('Invalid EventPro user data');
             }
@@ -176,14 +178,14 @@ const App = () => {
           navigate('/event-form', { replace: true });
         }
       }
-      return; // Exit to prevent further checks
+      return;
     }
   };
 
   useEffect(() => {
     console.log('App.jsx - Initializing');
     handleAuth();
-  }, [location.pathname, location.search, proLoading, easeLoading]); // Run on route, query, or loading state changes
+  }, [location.pathname, location.search]); // Removed proLoading, easeLoading to avoid redundant calls
 
   return (
     <ErrorBoundary>
