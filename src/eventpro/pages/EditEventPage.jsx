@@ -1,14 +1,14 @@
 import React from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import EventForm from '../components/EventForm';
 
 const EditEventPage = () => {
+  const location = useLocation();
   const navigate = useNavigate();
-  const { state } = useLocation();
-  const eventToEdit = state?.eventToEdit;
+  const { eventToEdit } = location.state || {};
 
   const clearEdit = () => {
-    navigate('/eventpro/list-events', { replace: true });
+    navigate('/eventpro/list-events');
   };
 
   return (
