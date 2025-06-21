@@ -18,6 +18,7 @@ import Login from './eventease/pages/Login';
 
 // EventPro Pages
 import AddEventPage from './eventpro/pages/AddEventPage';
+import EditEventPage from './eventpro/pages/EditEventPage'; // Added for editing events
 import ListEventsPage from './eventpro/pages/ListEventsPage';
 import ForgotPassword from './eventpro/pages/ForgotPassword';
 import ResetPassword from './eventpro/pages/ResetPassword';
@@ -29,8 +30,8 @@ const App = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
-  const { isAuthenticated: easeAuthenticated } = useSelector(state => state.eventease.auth);
-  const { isAuthenticated: proAuthenticated, user: proUser } = useSelector(state => state.eventpro.auth);
+  const { isAuthenticated: easeAuthenticated, loading: easeLoading } = useSelector(state => state.eventease.auth);
+  const { isAuthenticated: proAuthenticated, user: proUser, loading: proLoading } = useSelector(state => state.eventpro.auth);
 
   const getPlatform = () => {
     return location.pathname.startsWith('/eventpro') ? 'eventpro' : 'eventease';
@@ -56,8 +57,10 @@ const App = () => {
         if (parsedUser.platform !== platform) {
           console.error('App.jsx - Platform mismatch:', { userPlatform: parsedUser.platform, detectedPlatform: platform });
           toast.error('Platform mismatch. Please log in again.');
-          dispatch(logout());
-          navigate('/event-form', { replace: true });
+          if (platform === 'eventpro') {
+            dispatch(logout());
+          }
+          navigate(platform === 'eventpro' ? '/event-form' : '/eventease/login', { replace: true });
           return;
         }
         if (platform === 'eventpro') {
@@ -79,63 +82,68 @@ const App = () => {
       } catch (error) {
         console.error('App.jsx - Error parsing user:', error);
         toast.error('Invalid user data');
-        dispatch(logout());
-        navigate('/event-form', { replace: true });
+        if (platform === 'eventpro') {
+          dispatch(logout());
+        }
+        navigate(platform === 'eventpro' ? '/event-form' : '/eventease/login', { replace: true });
       }
-    } else if (platform === 'eventease' && !easeAuthenticated && location.pathname !== '/eventease/login') {
-      if (localStorage.getItem('eventeaseToken') && localStorage.getItem('eventeaseUser')) {
-        try {
-          const user = JSON.parse(localStorage.getItem('eventeaseUser') || '{}');
-          const token = localStorage.getItem('eventeaseToken');
-          if (user._id && user.email && token && user.platform === 'eventease') {
-            dispatch(setEventEaseAuth({ user, token }));
-            console.log('App.jsx - Restored EventEase auth');
-          } else {
-            throw new Error('Invalid EventEase user data');
+    } else {
+      if (platform === 'eventease' && !easeAuthenticated && !easeLoading && location.pathname !== '/eventease/login') {
+        if (localStorage.getItem('eventeaseToken') && localStorage.getItem('eventeaseUser')) {
+          try {
+            const user = JSON.parse(localStorage.getItem('eventeaseUser') || '{}');
+            const token = localStorage.getItem('eventeaseToken');
+            if (user._id && user.email && token && user.platform === 'eventease') {
+              dispatch(setEventEaseAuth({ user, token }));
+              console.log('App.jsx - Restored EventEase auth');
+            } else {
+              throw new Error('Invalid EventEase user data');
+            }
+          } catch (error) {
+            console.error('App.jsx - Error restoring EventEase auth:', error);
+            localStorage.removeItem('eventeaseToken');
+            localStorage.removeItem('eventeaseUser');
+            navigate('/eventease/login', { replace: true });
           }
-        } catch (error) {
-          console.error('App.jsx - Error restoring EventEase auth:', error);
-          localStorage.removeItem('eventeaseToken');
-          localStorage.removeItem('eventeaseUser');
+        } else {
           navigate('/eventease/login', { replace: true });
         }
-      } else {
-        navigate('/eventease/login', { replace: true });
-      }
-    } else if (platform === 'eventpro' && !proAuthenticated && location.pathname !== '/event-form') {
-      if (localStorage.getItem('eventproToken') && localStorage.getItem('eventproUser')) {
-        try {
-          const user = JSON.parse(localStorage.getItem('eventproUser') || '{}');
-          const token = localStorage.getItem('eventproToken');
-          if (user._id && user.email && token && user.platform === 'eventpro') {
-            dispatch(setEventProAuth({ user, token }));
-            dispatch(loadUser()).catch(error => {
-              console.error('App.jsx - loadUser failed:', error);
-              dispatch(logout());
-              localStorage.removeItem('eventproToken');
-              localStorage.removeItem('eventproUser');
-              toast.error('Invalid session. Please log in again.');
-              navigate('/event-form', { replace: true });
-            });
-          } else {
-            throw new Error('Invalid EventPro user data');
+      } else if (platform === 'eventpro' && !proAuthenticated && !proLoading && !['/event-form', '/eventpro/register', '/eventpro/forgot-password', '/eventpro/reset-password'].includes(location.pathname)) {
+        if (localStorage.getItem('eventproToken') && localStorage.getItem('eventproUser')) {
+          try {
+            const user = JSON.parse(localStorage.getItem('eventproUser') || '{}');
+            const token = localStorage.getItem('eventproToken');
+            if (user._id && user.email && token && user.platform === 'eventpro') {
+              dispatch(setEventProAuth({ user, token }));
+              dispatch(loadUser()).catch(error => {
+                console.error('App.jsx - loadUser failed:', error);
+                dispatch(logout());
+                localStorage.removeItem('eventproToken');
+                localStorage.removeItem('eventproUser');
+                toast.error('Invalid session. Please log in again.');
+                navigate('/event-form', { replace: true });
+              });
+            } else {
+              throw new Error('Invalid EventPro user data');
+            }
+          } catch (error) {
+            console.error('App.jsx - Error restoring EventPro auth:', error);
+            dispatch(logout());
+            localStorage.removeItem('eventproToken');
+            localStorage.removeItem('eventproUser');
+            navigate('/event-form', { replace: true });
           }
-        } catch (error) {
-          console.error('App.jsx - Error restoring EventPro auth:', error);
-          localStorage.removeItem('eventproToken');
-          localStorage.removeItem('eventproUser');
+        } else {
           navigate('/event-form', { replace: true });
         }
-      } else {
-        navigate('/event-form', { replace: true });
       }
     }
   };
 
   useEffect(() => {
-    console.log('App.jsx - Initial auth check');
+    console.log('App.jsx - Running handleAuth');
     handleAuth();
-  }, [proAuthenticated, easeAuthenticated]); // Run on auth state change
+  }, [location.pathname]); // Run on route changes
 
   return (
     <ErrorBoundary>
@@ -148,9 +156,9 @@ const App = () => {
           <Route path="/eventease/sync-google-calendar" element={<GoogleCalendarSync />} />
           <Route path="/eventease/create-event" element={<Calendar />} />
           {/* EventPro Routes */}
-          <Route path="/eventpro" element={proAuthenticated ? <ListEventsPage /> : <Navigate to="/event-form" replace />} />
+          <Route path="/eventpro" element={proAuthenticated ? <Dashboard /> : <Navigate to="/event-form" replace />} />
           <Route path="/eventpro/add-event" element={proAuthenticated ? <AddEventPage /> : <Navigate to="/event-form" replace />} />
-          <Route path="/eventpro/add-event/:id" element={proAuthenticated ? <AddEventPage /> : <Navigate to="/event-form" replace />} />
+          <Route path="/eventpro/add-event/:id" element={proAuthenticated ? <EditEventPage /> : <Navigate to="/event-form" replace />} />
           <Route path="/eventpro/register" element={<Register />} />
           <Route path="/eventpro/forgot-password" element={<ForgotPassword />} />
           <Route path="/eventpro/reset-password/:token" element={<ResetPassword />} />
