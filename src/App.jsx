@@ -37,49 +37,19 @@ const App = () => {
     if (location.pathname === '/') return null; // No platform for root
     if (location.pathname.startsWith('/eventpro')) return 'eventpro';
     if (location.pathname.startsWith('/eventease')) return 'eventease';
-    return null; // Default to no platform for other routes
-  };
-
-  const cleanLocalStorage = () => {
-    // Clean invalid eventease data
-    if (localStorage.getItem('eventeaseToken') || localStorage.getItem('eventeaseUser')) {
-      try {
-        const user = JSON.parse(localStorage.getItem('eventeaseUser') || '{}');
-        const token = localStorage.getItem('eventeaseToken');
-        if (!user._id || !user.email || !token || user.platform !== 'eventease') {
-          localStorage.removeItem('eventeaseToken');
-          localStorage.removeItem('eventeaseUser');
-          console.log('App.jsx - Cleared invalid eventease localStorage');
-        }
-      } catch (error) {
-        localStorage.removeItem('eventeaseToken');
-        localStorage.removeItem('eventeaseUser');
-        console.log('App.jsx - Cleared eventease localStorage due to parsing error');
-      }
-    }
-    // Clean invalid eventpro data
-    if (localStorage.getItem('eventproToken') || localStorage.getItem('eventproUser')) {
-      try {
-        const user = JSON.parse(localStorage.getItem('eventproUser') || '{}');
-        const token = localStorage.getItem('eventproToken');
-        if (!user._id || !user.email || !token || user.platform !== 'eventpro') {
-          localStorage.removeItem('eventproToken');
-          localStorage.removeItem('eventproUser');
-          console.log('App.jsx - Cleared invalid eventpro localStorage');
-        }
-      } catch (error) {
-        localStorage.removeItem('eventproToken');
-        localStorage.removeItem('eventproUser');
-        console.log('App.jsx - Cleared eventpro localStorage due to parsing error');
-      }
-    }
+    return null; // No platform for other routes
   };
 
   const handleAuth = () => {
     const platform = getPlatform();
+    const searchParams = new URLSearchParams(location.search);
+    const userParam = searchParams.get('user');
+    const userPlatform = searchParams.get('platform');
 
     console.log('App.jsx - Current path:', location.pathname);
     console.log('App.jsx - Platform:', platform);
+    console.log('App.jsx - User query:', userParam);
+    console.log('App.jsx - Query platform:', userPlatform);
     console.log('App.jsx - Redux state:', { easeAuthenticated, proAuthenticated, proUser });
 
     // Skip auth checks for root or non-platform routes
@@ -87,66 +57,133 @@ const App = () => {
       return;
     }
 
-    // Eventease authentication check
-    if (platform === 'eventease' && !easeAuthenticated && !easeLoading) {
-      const publicRoutes = ['/eventease/login'];
-      if (!publicRoutes.includes(location.pathname)) {
-        try {
-          const user = JSON.parse(localStorage.getItem('eventeaseUser') || '{}');
-          const token = localStorage.getItem('eventeaseToken');
-          if (user._id && user.email && token && user.platform === 'eventease') {
-            dispatch(setEventEaseAuth({ user, token }));
-            console.log('App.jsx - Restored EventEase auth');
+    // Handle user query parameter from backend redirect
+    if (userParam && userPlatform) {
+      try {
+        const parsedUser = JSON.parse(decodeURIComponent(userParam));
+        const token = parsedUser.token;
+        if (!parsedUser._id || !parsedUser.email || !token) {
+          throw new Error('Invalid user data');
+        }
+        if (parsedUser.platform !== userPlatform || userPlatform !== platform) {
+          console.error('App.jsx - Platform mismatch:', { userPlatform: parsedUser.platform, queryPlatform: userPlatform, detectedPlatform: platform });
+          toast.error('Platform mismatch. Please log in again.');
+          if (platform === 'eventpro') {
+            dispatch(logout());
+            localStorage.removeItem('eventproToken');
+            localStorage.removeItem('eventproUser');
+            navigate('/event-form', { replace: true });
           } else {
-            throw new Error('Invalid EventEase user data');
+            localStorage.removeItem('eventeaseToken');
+            localStorage.removeItem('eventeaseUser');
+            navigate('/eventease/login', { replace: true });
           }
-        } catch (error) {
-          console.error('App.jsx - Error restoring EventEase auth:', error);
+          return;
+        }
+        if (platform === 'eventpro') {
+          localStorage.setItem('eventproToken', token);
+          localStorage.setItem('eventproUser', JSON.stringify(parsedUser));
+          dispatch(setEventProAuth({ user: parsedUser, token }));
+          dispatch(loadUser()).catch(error => {
+            console.error('App.jsx - loadUser failed:', error);
+            dispatch(logout());
+            localStorage.removeItem('eventproToken');
+            localStorage.removeItem('eventproUser');
+            toast.error('Invalid session. Please log in again.');
+            navigate('/event-form', { replace: true });
+          });
+          navigate('/eventpro/dashboard', { replace: true }); // Redirect to dashboard after successful auth
+        } else if (platform === 'eventease') {
+          localStorage.setItem('eventeaseToken', token);
+          localStorage.setItem('eventeaseUser', JSON.stringify(parsedUser));
+          dispatch(setEventEaseAuth({ user: parsedUser, token }));
+          navigate(parsedUser.role === 'admin' ? '/eventpro/admin-dashboard' : '/eventease', { replace: true });
+        }
+        return; // Exit after handling query parameter
+      } catch (error) {
+        console.error('App.jsx - Error parsing user:', error);
+        toast.error('Invalid user data');
+        if (platform === 'eventpro') {
+          dispatch(logout());
+          localStorage.removeItem('eventproToken');
+          localStorage.removeItem('eventproUser');
+          navigate('/event-form', { replace: true });
+        } else {
           localStorage.removeItem('eventeaseToken');
           localStorage.removeItem('eventeaseUser');
           navigate('/eventease/login', { replace: true });
         }
+        return;
       }
-      return; // Exit early to prevent eventpro checks
+    }
+
+    // Eventease authentication check
+    if (platform === 'eventease' && !easeAuthenticated && !easeLoading) {
+      const publicRoutes = ['/eventease/login'];
+      if (!publicRoutes.includes(location.pathname)) {
+        if (localStorage.getItem('eventeaseToken') && localStorage.getItem('eventeaseUser')) {
+          try {
+            const user = JSON.parse(localStorage.getItem('eventeaseUser') || '{}');
+            const token = localStorage.getItem('eventeaseToken');
+            if (user._id && user.email && token && user.platform === 'eventease') {
+              dispatch(setEventEaseAuth({ user, token }));
+              console.log('App.jsx - Restored EventEase auth');
+            } else {
+              throw new Error('Invalid EventEase user data');
+            }
+          } catch (error) {
+            console.error('App.jsx - Error restoring EventEase auth:', error);
+            localStorage.removeItem('eventeaseToken');
+            localStorage.removeItem('eventeaseUser');
+            navigate('/eventease/login', { replace: true });
+          }
+        } else {
+          navigate('/eventease/login', { replace: true });
+        }
+      }
+      return; // Exit to prevent eventpro checks
     }
 
     // Eventpro authentication check
     if (platform === 'eventpro' && !proAuthenticated && !proLoading) {
       const publicRoutes = ['/event-form', '/eventpro/register', '/eventpro/forgot-password', '/eventpro/reset-password'];
       if (!publicRoutes.includes(location.pathname)) {
-        try {
-          const user = JSON.parse(localStorage.getItem('eventproUser') || '{}');
-          const token = localStorage.getItem('eventproToken');
-          if (user._id && user.email && token && user.platform === 'eventpro') {
-            dispatch(setEventProAuth({ user, token }));
-            dispatch(loadUser()).catch(error => {
-              console.error('App.jsx - loadUser failed:', error);
-              dispatch(logout());
-              localStorage.removeItem('eventproToken');
-              localStorage.removeItem('eventproUser');
-              toast.error('Invalid session. Please log in again.');
-              navigate('/event-form', { replace: true });
-            });
-          } else {
-            throw new Error('Invalid EventPro user data');
+        if (localStorage.getItem('eventproToken') && localStorage.getItem('eventproUser')) {
+          try {
+            const user = JSON.parse(localStorage.getItem('eventproUser') || '{}');
+            const token = localStorage.getItem('eventproToken');
+            if (user._id && user.email && token && user.platform === 'eventpro') {
+              dispatch(setEventProAuth({ user, token }));
+              dispatch(loadUser()).catch(error => {
+                console.error('App.jsx - loadUser failed:', error);
+                dispatch(logout());
+                localStorage.removeItem('eventproToken');
+                localStorage.removeItem('eventproUser');
+                toast.error('Invalid session. Please log in again.');
+                navigate('/event-form', { replace: true });
+              });
+            } else {
+              throw new Error('Invalid EventPro user data');
+            }
+          } catch (error) {
+            console.error('App.jsx - Error restoring EventPro auth:', error);
+            dispatch(logout());
+            localStorage.removeItem('eventproToken');
+            localStorage.removeItem('eventproUser');
+            navigate('/event-form', { replace: true });
           }
-        } catch (error) {
-          console.error('App.jsx - Error restoring EventPro auth:', error);
-          dispatch(logout());
-          localStorage.removeItem('eventproToken');
-          localStorage.removeItem('eventproUser');
+        } else {
           navigate('/event-form', { replace: true });
         }
       }
-      return; // Exit early to prevent further checks
+      return; // Exit to prevent further checks
     }
   };
 
   useEffect(() => {
     console.log('App.jsx - Initializing');
-    cleanLocalStorage(); // Clean invalid localStorage on app load
     handleAuth();
-  }, [location.pathname, proLoading, easeLoading]); // Run on route or loading state changes
+  }, [location.pathname, location.search, proLoading, easeLoading]); // Run on route, query, or loading state changes
 
   return (
     <ErrorBoundary>
