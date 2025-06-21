@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from
 import { useDispatch, useSelector } from 'react-redux';
 import { setAuth as setEventEaseAuth } from './store/slices/eventease/authSlice';
 import { setAuth as setEventProAuth, loadUser, logout } from './store/slices/eventpro/authSlice';
-import setAuthToken from './utils/setAuthToken';
+import setAuthToken from './eventpro/utils/setAuthToken';
 import Layout from './shared/components/Layout';
 import ErrorBoundary from './shared/components/ErrorBoundary';
 import { toast } from 'react-toastify';
