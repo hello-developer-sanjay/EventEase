@@ -1,13 +1,12 @@
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { deleteEvent, fetchEvents } from '../../store/slices/eventpro/eventSlice';
-import DataTable from 'react-data-table-component';
 import { useNavigate } from 'react-router-dom';
+import DataTable from 'react-data-table-component';
 import { Helmet } from 'react-helmet';
 import styled from 'styled-components';
 import { format } from 'date-fns';
 import { toast } from 'react-toastify';
-import { logout } from '../../store/slices/eventpro/authSlice';
 
 const TableContainer = styled.div`
   max-width: 1200px;
@@ -48,35 +47,26 @@ const DeleteButton = styled(ActionButton)`
 `;
 
 const EventTable = () => {
-  const events = useSelector((state) => state.eventpro.events.events);
+  const events = useSelector((state) => state.eventpro.events.events || []);
   const { isAuthenticated } = useSelector((state) => state.eventpro.auth);
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
   useEffect(() => {
     if (!isAuthenticated) {
-      navigate('/event-form', { replace: true });
+      navigate('/eventpro/login');
     } else {
-      dispatch(fetchEvents()).catch((error) => {
-        if (error === 'User is not authenticated') {
-          dispatch(logout());
-          navigate('/event-form', { replace: true });
-        }
-      });
+      dispatch(fetchEvents());
     }
   }, [dispatch, isAuthenticated, navigate]);
 
   const handleDelete = async (eventId) => {
-    try {
-      await dispatch(deleteEvent(eventId)).unwrap();
-      toast.success('Event deleted successfully');
-      dispatch(fetchEvents());
-    } catch (error) {
-      if (error === 'User is not authenticated') {
-        dispatch(logout());
-        navigate('/event-form', { replace: true });
-      } else {
-        toast.error('Error deleting event');
+    if (window.confirm('Are you sure you want to delete this event?')) {
+      try {
+        await dispatch(deleteEvent(eventId)).unwrap();
+        toast.success('Event deleted successfully');
+      } catch (error) {
+        toast.error(error || 'Failed to delete event');
       }
     }
   };
@@ -155,6 +145,7 @@ const EventTable = () => {
         pagination
         highlightOnHover
         responsive
+        noDataComponent="No events found."
       />
     </TableContainer>
   );
