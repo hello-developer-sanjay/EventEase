@@ -1,5 +1,5 @@
 <!-- Banner -->
-<img src="https://capsule-render.vercel.app/api?type=waving&color=0E75B6&height=120&section=header&text=EventEase:%20Ultimate%20Event%20Management%20Software%20for%202025&fontSize=32&fontColor=FFFFFF" alt="EventEase Banner" />
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0E75B6&height=120&section=header&text=EventEase:%20Ultimate%20Event%20Management%20Software&fontSize=32&fontColor=FFFFFF" alt="EventEase Banner" />
 
 <p align="center">
   <img src="https://mys3resources.s3.ap-south-1.amazonaws.com/LIC/eventlogo.png" width="150" alt="EventEase Logo"/>
@@ -116,3 +116,7 @@ npm run dev
 # Run frontend
 cd ../frontend
 npm start
+---
+
+
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0E75B6&height=120&section=footer" alt="Footer Banner" /> 
