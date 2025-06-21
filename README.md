@@ -61,9 +61,8 @@
 
 ## 📍 Live Links
 
-- 🌐 Website: [https://event-manager-two.vercel.app](https://event-manager-two.vercel.app)  
+- 🌐 Website: [https://event-manager-two.vercel.app](https://eventunified.vercel.app)  
 - 🛠️ API: [https://eventmanager-api-19july.onrender.com/api](https://eventmanager-api-19july.onrender.com/api)  
-- 💻 GitHub: [https://github.com/SanjayPatidar12/eventease-eventpro](https://github.com/SanjayPatidar12/eventease-eventpro)
 
 ---
 
