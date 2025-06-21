@@ -8,12 +8,8 @@ import { toast } from 'react-toastify';
 const AddEventPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { isAuthenticated, user } = useSelector((state) => state.eventpro.auth);
+  const { isAuthenticated } = useSelector((state) => state.eventpro.auth);
   const eventToEdit = location.state?.eventToEdit || null;
-
-  const searchParams = new URLSearchParams(location.search);
-  const userParam = searchParams.get('user');
-  const userPlatform = searchParams.get('platform');
 
   if (!isAuthenticated) {
     console.log('AddEventPage.jsx - Not authenticated, redirecting to /event-form');
@@ -22,28 +18,17 @@ const AddEventPage = () => {
     return null;
   }
 
-  if (userParam && userPlatform === 'eventpro') {
-    try {
-      const parsedUser = JSON.parse(decodeURIComponent(userParam));
-      const token = localStorage.getItem('eventproToken');
-      if (parsedUser._id && parsedUser.email && token && parsedUser.platform === 'eventpro') {
-        setAuthToken(token);
-        console.log('AddEventPage.jsx - User verified from query:', parsedUser);
-      } else {
-        throw new Error('Invalid user data');
-      }
-    } catch (error) {
-      console.error('AddEventPage.jsx - Error verifying user:', error);
-      toast.error('Invalid session. Please log in again.');
-      navigate('/event-form', { replace: true });
-      return null;
-    }
+  const token = localStorage.getItem('eventproToken');
+  if (token) {
+    setAuthToken(token);
+  } else {
+    console.log('AddEventPage.jsx - No token found, redirecting to /event-form');
+    toast.error('Session expired. Please log in again.');
+    navigate('/event-form', { replace: true });
+    return null;
   }
 
-  const clearEdit = () => {
-    const userParam = encodeURIComponent(JSON.stringify(user));
-    navigate(`/eventpro/dashboard?platform=eventpro&user=${userParam}`);
-  };
+  const clearEdit = () => navigate('/eventpro/dashboard');
 
   return (
     <PageWrapper>
