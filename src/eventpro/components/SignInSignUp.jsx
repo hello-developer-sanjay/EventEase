@@ -173,7 +173,7 @@ const SignInSignUp = ({ platform }) => {
 
   const handleGoogleLogin = () => {
     console.log('SignInSignUp.jsx - Initiating Google login for platform:', platform);
-    window.location.href = `https://eventmanager-api-19july.onrender.com/api/auth/google?platform=${platform}`;
+    window.location.href = `https://9gt7lodrtl.execute-api.ap-south-1.amazonaws.com/prod/api/auth/google?platform=${platform}`;
   };
 
   return (
